@@ -12,7 +12,7 @@ Made for Love2D
 
 ## State of the engine
 
-This version of LoveXYZ* is unstable and is not optimized.
+This version of LoveXYZ is unstable and is not optimized.
 
 This version is also pretty unfinished.
 
@@ -33,3 +33,5 @@ Will add more features and improve perf.
 (soon)
 
 ----
+
+Made with Android
