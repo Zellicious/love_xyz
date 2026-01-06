@@ -1,0 +1,1 @@
+This demo folder contains simple assets
