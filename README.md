@@ -33,8 +33,6 @@ Will add more features and improve perf.
 (soon)
 
 ----
-
-----
 ### Patch notes
 
 #### Version 1.1.0
