@@ -40,7 +40,7 @@ highp float sampleShadow(vec4 lightSpacePos,vec3 N, vec3 L)
         
   highp float currentDepth = proj.z;
 
-  highp float bias = max(0.0005 * (1.0 - dot(N, L)), 0.0003);
+  highp float bias = max(0.001 * (1.0 - dot(N, L)), 0.0006);
   highp float shadow = 0.0;
 
   highp vec2 texelSize = 1.0 / u_ShadowMapSize / shadowDetail;
