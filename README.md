@@ -35,7 +35,7 @@ Will add more features and improve perf.
 ----
 
 ----
-#### Patch notes
+### Patch notes
 
 #### Version 1.1.0
 
