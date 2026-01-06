@@ -1,13 +1,17 @@
 -----
 
+-- require the module
 lovexyz = require("lovexyz")
 
 -----
 
 function love.load()
+  -- cache textures
+  
 	uvTex = triangles.newTexture("assets/tex/tex2.png","UVTex")
 	uvTex2 = triangles.newTexture("assets/tex/tex.png","UVTex2")
 	
+	-- load models
 	teapot = triangles.loadModel("assets/highp_models/teapot.obj")
 	suzanne = triangles.loadModel("assets/highp_models/suzanne.obj")
 	
@@ -15,9 +19,12 @@ function love.load()
 	
 	floor = triangles.loadModel("assets/lowp_models/cube_uv.obj")
   
+  -- set textures
 	floor.mesh:setTexture(uvTex)
 	teapot.mesh:setTexture(uvTex2)
 	suzanne.mesh:setTexture(uvTex2)
+	
+	-- model matrixes
 	
 	teapot:scale(.06,.06,.06)
 	teapot:move(0,1,0)
@@ -69,16 +76,19 @@ function love.touchmoved(id, x, y, dx, dy)
 end
 
 function love.update(dt)
+  -- matrix movement
   teapot:rotY(dt)
   suzanne:rotate(dt*.8,dt,dt*.6)
 end
 
 function love.resize(w,h)
+  -- refresh when resizinf
   lovexyz.refreshCanvases()
 end
 
 
 function love.draw()
+  -- draw 
   lovexyz.draw()
   love.graphics.print(string.format("%.2f fps",1/love.timer.getAverageDelta()))
 end
