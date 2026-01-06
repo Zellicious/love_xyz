@@ -34,5 +34,9 @@ Will add more features and improve perf.
 
 ----
 
-#### Version 0.0.5
+----
+#### Patch notes
 
+#### Version 1.1.0
+
+* Added the ability to enable certain shader aspects
