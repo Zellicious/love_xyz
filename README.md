@@ -1,6 +1,6 @@
 # LoveXYZ
 
-LoveXYZ (name subject to change) is a 3d engine developed by Zellicious.
+LoveXYZ is a 3d engine developed by Zellicious.
 
 Made for Love2D
 
