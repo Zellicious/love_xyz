@@ -6,7 +6,7 @@ Made for Love2D
 
 #### Preview
 
-![preview what the enginee can do](preview.gif)
+![preview what the engine can do](preview.gif)
 
 ----
 
@@ -33,8 +33,5 @@ Will add more features and improve perf.
 (soon)
 
 ----
-### Patch notes
 
 #### Version 1.1.0
-
-* Added the ability to enable certain shader aspects
