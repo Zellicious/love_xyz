@@ -4,6 +4,8 @@ LoveXYZ (name subject to change) is a 3d engine developed by Zellicious.
 
 #### Preview
 
+----
+
 ![preview what the engune can do](preview.gif)
 
 
