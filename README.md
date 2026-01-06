@@ -33,5 +33,3 @@ Will add more features and improve perf.
 (soon)
 
 ----
-
-#### Version 1.1.0

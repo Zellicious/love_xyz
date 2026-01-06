@@ -1,6 +1,5 @@
 local sw,sh = love.graphics.getWidth(), love.graphics.getHeight()
 
-local graphicsScale = 1
 local skyboxVerts = {
   {-1, -1,  1,  1/4, 1/3},
   { 1, -1,  1,  1/2, 1/3},
@@ -50,18 +49,20 @@ local skyboxVerts = {
   { 1, -1,  1,  1/2, 1/3},
   {-1, -1,  1,  1/4, 1/3},
 }
-
 local engine = {}
 engine.path = "lovexyz/"
 -- engine stuff
+
+engine.graphicsScale = 1
+
 engine.canvas = love.graphics.newCanvas(
-  math.ceil(sw*graphicsScale),
-  math.ceil(sh*graphicsScale),
+  math.ceil(sw*engine.graphicsScale),
+  math.ceil(sh*engine.graphicsScale),
   {format="rgba8",readable=true}
   )
 engine.depthCanvas = love.graphics.newCanvas(
-  math.ceil(sw*graphicsScale),
-  math.ceil(sh*graphicsScale),
+  math.ceil(sw*engine.graphicsScale),
+  math.ceil(sh*engine.graphicsScale),
   {
     format="depth24",
     type = "2d",
@@ -82,13 +83,13 @@ engine.shadowMap = love.graphics.newCanvas(
 )
 engine.shadowMap:setFilter("linear","linear")
 
-local shadowSize = 36
-local sunProj = mat4.ortho(
-    -shadowSize, shadowSize,
-    -shadowSize, shadowSize,
+engine.shadowSize = 24
+engine.sunProj = mat4.ortho(
+    -engine.shadowSize, engine.shadowSize,
+    -engine.shadowSize, engine.shadowSize,
     -500, 500
 )
-sunProj = mat4.transpose(sunProj)
+engine.sunProj = mat4.transpose(engine.sunProj)
 ----
 
 -- base lighting params
@@ -102,7 +103,7 @@ engine.lighting.ambient = .15
 engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
 
-engine.lighting.shadowEnabled = true
+engine.lightingshadowEnabled = true
 engine.lighting.specularEnabled = true
 engine.lighting.diffuseEnabled = true
 engine.lighting.skyboxEnabled = true
@@ -187,13 +188,13 @@ function engine.refreshCanvases()
   engine.depthCanvas:release()
   
   engine.canvas = love.graphics.newCanvas(
-    math.ceil(sw*graphicsScale),
-    math.ceil(sh*graphicsScale)
-    ,{format="rgba8",readable=true}
+    math.ceil(sw*engine.graphicsScale),
+    math.ceil(sh*engine.graphicsScale),
+    {format="rgba8",readable=true}
     )
   engine.depthCanvas = love.graphics.newCanvas(
-    math.ceil(sw*graphicsScale),
-    math.ceil(sh*graphicsScale),
+    math.ceil(sw*engine.graphicsScale),
+    math.ceil(sh*engine.graphicsScale),
     {
       format="depth24",
       type = "2d",
@@ -201,6 +202,12 @@ function engine.refreshCanvases()
       
     }
     )
+  engine.sunProj = mat4.ortho(
+    -engine.shadowSize, engine.shadowSize,
+    -engine.shadowSize, engine.shadowSize,
+    -500, 500
+  )
+  engine.sunProj = mat4.transpose(engine.sunProj)
   engine.proj = mat4.perspective(
   	engine.cam.fov,
   	sw / sh,
@@ -227,7 +234,7 @@ function engine.draw()
   local mvpNoTranslate = mat4.mul(engine.proj, viewNoTranslation)
   
   local sunView = buildSunView(engine.lighting.sunDirection,engine.cam)
-  local sunMVP = mat4.mul(sunProj, sunView)
+  local sunMVP = mat4.mul(engine.sunProj, sunView)
   local sunMVPNoTranslate = {
     sunView[1], sunView[2], sunView[3],  0,
     sunView[5], sunView[6], sunView[7],  0,
