@@ -74,9 +74,6 @@ engine.skyboxShader = love.graphics.newShader(engine.path.."3d/gl/transformSky.g
 engine.transformShader = love.graphics.newShader(engine.path.."3d/gl/lit.glsl",engine.path.."3d/gl/transform.glsl")
 engine.transformOnly = love.graphics.newShader(engine.path.."3d/gl/shadowMapFrag.glsl",engine.path.."3d/gl/transform.glsl")
 
-engine.gamma = love.graphics.newShader(engine.path.."3d/gl/gammaFrag.glsl")
-
-
 ----
 engine.shadowMap = love.graphics.newCanvas(
   1024,
@@ -108,6 +105,8 @@ engine.lighting.specStrength = .25
 engine.lighting.shadowEnabled = true
 engine.lighting.specularEnabled = true
 engine.lighting.diffuseEnabled = true
+engine.lighting.skyboxEnabled = true
+
 
 ----
 engine.cam = {
@@ -227,18 +226,6 @@ function engine.draw()
   local mvp = mat4.mul(mat4.mul(engine.proj, view),engine.cam.matrix)
   local mvpNoTranslate = mat4.mul(engine.proj, viewNoTranslation)
   
-  ----
-  
-  love.graphics.setMeshCullMode("front")
-  love.graphics.setDepthMode("lequal", false)
-  love.graphics.setShader(engine.skyboxShader)
-  engine.skyboxShader:send("u_MVP", mat4.mul(mvpNoTranslate,mat4.scale(1,-1,1)))
-  
-  love.graphics.draw(engine.skyboxMesh)
-  
-  ----
-  love.graphics.setCanvas({engine.shadowMap, depth = true})
-  love.graphics.clear()
   local sunView = buildSunView(engine.lighting.sunDirection,engine.cam)
   local sunMVP = mat4.mul(sunProj, sunView)
   local sunMVPNoTranslate = {
@@ -247,6 +234,25 @@ function engine.draw()
     sunView[9], sunView[10],sunView[11], 0,
     0, 0, 0, 1
     }
+  
+  
+  ---- skybox
+  if not engine.lighting.skyboxEnabled then goto skyboxEnd end
+  
+  love.graphics.setMeshCullMode("front")
+  love.graphics.setDepthMode("lequal", false)
+  love.graphics.setShader(engine.skyboxShader)
+  engine.skyboxShader:send("u_MVP", mat4.mul(mvpNoTranslate,mat4.scale(1,-1,1)))
+  
+  love.graphics.draw(engine.skyboxMesh)
+  
+  ::skyboxEnd::
+  
+  ---- shadow map
+  if not engine.lighting.shadowEnabled then goto shadowMapEnd end
+  
+  love.graphics.setCanvas({engine.shadowMap, depth = true})
+  love.graphics.clear()
   
   love.graphics.setMeshCullMode("back")
   love.graphics.setDepthMode("less", true)
@@ -262,11 +268,13 @@ function engine.draw()
     
     ::skip::
   end
-  love.graphics.setShader()
-  
+  ::shadowMapEnd::
   ----
   
-  ----
+  
+  
+  
+  ---- main canvas render
   love.graphics.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
   
   love.graphics.setMeshCullMode("back")
@@ -275,7 +283,7 @@ function engine.draw()
   love.graphics.setShader(engine.transformShader)
   
   engine.transformShader:send("shadowMap", engine.shadowMap)
-  engine.transformShader:send("u_SunMVP", sunMVP) -- sun's sunView * projection
+  engine.transformShader:send("u_SunMVP", sunMVP)
   
   engine.transformShader:send("u_MVP", mvp)
   for _, model in ipairs(triangles.loadedModels) do
@@ -300,15 +308,12 @@ function engine.draw()
   engine.transformShader:send("specularEnabled",engine.lighting.specularEnabled)
   engine.transformShader:send("shadowEnabled",engine.lighting.shadowEnabled)
   
-  
-  ----
+  ---- finally draw the canvas
   love.graphics.setCanvas()
   love.graphics.setShader()
   
   love.graphics.setDepthMode("always", false)
-  love.graphics.setShader(engine.gamma)
   love.graphics.draw(engine.canvas, 0, 0, 0, sw/engine.canvas:getWidth(),sh/engine.canvas:getHeight())
-  love.graphics.setShader()
   ----
 end
 
