@@ -105,6 +105,10 @@ engine.lighting.ambient = .15
 engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
 
+engine.lighting.shadowEnabled = true
+engine.lighting.specularEnabled = true
+engine.lighting.diffuseEnabled = true
+
 ----
 engine.cam = {
   pos=vec3.new(0,0,3),
@@ -291,6 +295,11 @@ function engine.draw()
   engine.transformShader:send("u_Ambient", engine.lighting.ambient)
   engine.transformShader:send("u_Shininess", engine.lighting.specShininess)
   engine.transformShader:send("u_Specular", engine.lighting.specStrength)
+  
+  engine.transformShader:send("diffuseEnabled",engine.lighting.diffuseEnabled)
+  engine.transformShader:send("specularEnabled",engine.lighting.specularEnabled)
+  engine.transformShader:send("shadowEnabled",engine.lighting.shadowEnabled)
+  
   
   ----
   love.graphics.setCanvas()
