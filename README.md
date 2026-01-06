@@ -1,2 +1,27 @@
-# love_xyz
-# love_xyz
+# LoveXYZ
+
+LoveXYZ (name subject to change) is a 3d engine developed by Zellicious.
+
+
+----
+
+## State of the engine
+
+This version of LoveXYZ* is unstable and is not optimized.
+
+This version is also pretty unfinished.
+
+Will add more features and improve perf.
+
+----
+
+### Usage notes
+
+* Only supports simple triangle loading and obj model loading
+* You can cache textures and give them simpler names to use in other scripts
+* Keep in mind that lighting is currently very simple (blinn-phong)
+
+----
+
+#### Version 0.0.5
+
