@@ -103,7 +103,7 @@ engine.lighting.ambient = .15
 engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
 
-engine.lightingshadowEnabled = true
+engine.lighting.shadowEnabled = true
 engine.lighting.specularEnabled = true
 engine.lighting.diffuseEnabled = true
 engine.lighting.skyboxEnabled = true
