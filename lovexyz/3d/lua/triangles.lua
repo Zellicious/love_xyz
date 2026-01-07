@@ -1,5 +1,6 @@
 local triangles = {}
-local missing_texture_path = "3d/defaults/missing.png"
+triangles.path = "lovexyz/"
+
 triangles.__index = triangles
 triangles.meshes = {}
 triangles.loadedModels={}
@@ -12,11 +13,11 @@ triangles.format = {
 }
 
 function isPowerOfTwo(n)
-    if n <= 0 then return false end
-    while n % 2 == 0 do
-        n = n / 2
-    end
-    return n == 1
+  if n <= 0 then return false end
+  while n % 2 == 0 do
+    n = n / 2
+  end
+  return n == 1
 end
 
 local function packVertex(v)
@@ -47,7 +48,7 @@ function triangles.add(v1, v2, v3, usage)
 end
 
 function triangles.newTexture(path,name)
-  if not love.filesystem.getInfo(path) then path = missing_texture_path end
+  assert(love.filesystem.getInfo(path),"File not found: "..path)
   local tex = love.graphics.newImage(path)
   
   if isPowerOfTwo(tex:getHeight()) and isPowerOfTwo(tex:getWidth()) then
@@ -71,7 +72,6 @@ function triangles.loadModel(path,usage,lookupName)
 	local model = {
 	  mesh=mesh,
 	  transformMatrix=mat4.identity(),
-	  frustumCullRadius = 1,
 	  visible=true
 	}
 	
@@ -110,13 +110,6 @@ function triangles.loadModel(path,usage,lookupName)
 	triangles.loadedModels[lookupName or #triangles.loadedModels + 1] = model
 	
 	return model
-end
-
-function triangles.clear()
-	for i = 1, #triangles.meshes do
-		triangles.meshes[i]:release()
-	end
-	triangles.meshes = {}
 end
 
 return triangles

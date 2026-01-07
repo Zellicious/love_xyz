@@ -77,8 +77,8 @@ engine.transformOnly = love.graphics.newShader(engine.path.."3d/gl/shadowMapFrag
 
 ----
 engine.shadowMap = love.graphics.newCanvas(
-  1024,
-  1024
+  2048,
+  2048
   ,{format="r16f",readable=true}
 )
 engine.shadowMap:setFilter("linear","linear")
@@ -156,11 +156,11 @@ local function buildView(cam)
 end
 
 local function dirToEuler(dir)
-    local yaw = math.atan2(dir.x, -dir.z)
-    local pitch = math.asin(-dir.y)
-    local roll = 0
+  local yaw = math.atan2(dir.x, -dir.z)
+  local pitch = math.asin(-dir.y)
+  local roll = 0
     
-    return vec3.new(pitch, yaw, roll)
+  return vec3.new(pitch, yaw, roll)
 end
 
 local function buildSunView(sunDir,cam)
