@@ -77,13 +77,13 @@ engine.transformOnly = love.graphics.newShader(engine.path.."3d/gl/shadowMapFrag
 
 ----
 engine.shadowMap = love.graphics.newCanvas(
-  2048,
-  2048
+  1024,
+  1024
   ,{format="r16f",readable=true}
 )
 engine.shadowMap:setFilter("linear","linear")
 
-engine.shadowSize = 24
+engine.shadowSize = 32
 engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
