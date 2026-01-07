@@ -181,6 +181,29 @@ local function buildSunView(sunDir,cam)
 	return mat4.mul(r, t)
 end
 
+function engine.perfDebug()
+  love.graphics.push()
+  love.graphics.translate(8,8)
+  
+  love.graphics.setColor(0,0,0,.7)
+  love.graphics.rectangle("fill",0,0,256,32+16)
+  
+  love.graphics.push()
+  love.graphics.translate(8,8)
+  
+  love.graphics.setColor(1,1,1)
+  love.graphics.print(string.format("%.2f fps",1/love.timer.getAverageDelta()))
+  
+  love.graphics.setColor(1,1,1)
+  love.graphics.print(string.format("%.2f live fps",1/love.timer.getDelta()),0,16)
+  
+  love.graphics.pop()
+  
+  love.graphics.setColor(1,1,1)
+  
+  love.graphics.pop()
+end
+
 function engine.refreshCanvases()
   sw,sh = love.graphics.getWidth(), love.graphics.getHeight()
   
