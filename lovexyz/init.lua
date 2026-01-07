@@ -11,7 +11,7 @@ obj = require(basePathName..".3d.lua.obj")
 engine = require(basePathName..".3d.engine")
 engine.path = basePathName
 
-engine._VERSION = "lovexyz 1.1.9"
+engine._VERSION = "0.2.9-alpha"
 print(engine._VERSION)
 
 local engine = engine
