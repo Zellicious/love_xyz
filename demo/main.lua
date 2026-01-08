@@ -12,9 +12,12 @@ lovexyz = require("lovexyz")
 -----
 
 function love.load()
+  -- newTexture: load tecxture and store it
 	uvTex = triangles.newTexture("assets/tex/tex2.png","UVTex")
 	uvTex2 = triangles.newTexture("assets/tex/tex.png","UVTex2")
 	
+	
+	-- loadModel: load model objs
 	teapot = triangles.loadModel("assets/highp_models/teapot.obj")
 	suzanne = triangles.loadModel("assets/highp_models/suzanne.obj")
 	
@@ -22,6 +25,7 @@ function love.load()
 	
 	floor = triangles.loadModel("assets/lowp_models/cube_uv.obj")
   
+  -- model: set textures and transforms
 	floor.mesh:setTexture(uvTex)
 	teapot.mesh:setTexture(uvTex2)
 	suzanne.mesh:setTexture(uvTex2)

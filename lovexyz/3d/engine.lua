@@ -1,5 +1,93 @@
-local sw,sh = love.graphics.getWidth(), love.graphics.getHeight()
+local lg = love.graphics -- tired of typing love.graphics?
 
+local sw,sh = lg.getWidth(), lg.getHeight()
+local engine = {}
+engine.path = "lovexyz/"
+-- engine stuff
+
+engine.graphicsScale = 1
+
+engine.canvas = lg.newCanvas(
+  math.ceil(sw*engine.graphicsScale),
+  math.ceil(sh*engine.graphicsScale),
+  {format="rgba8",readable=true}
+  )
+engine.depthCanvas = lg.newCanvas(
+  math.ceil(sw*engine.graphicsScale),
+  math.ceil(sh*engine.graphicsScale),
+  {
+    format="depth24",
+    type = "2d",
+    readable=true
+    
+  }
+  )
+
+-- create shaders
+engine.skyboxShader = lg.newShader(engine.path.."3d/gl/transformSky.vert")
+engine.transformShader = lg.newShader(engine.path.."3d/gl/main.glsl")
+engine.shadowMapShader = lg.newShader(engine.path.."3d/gl/shadowMap.glsl")
+engine.colorCorrection = lg.newShader(engine.path.."3d/gl/colorCorrect.frag")
+----
+
+engine.cam = {
+  pos=vec3.new(0,0,3),
+  rot=vec3.new(),
+  fov = math.rad(90),
+  matrix=mat4.identity()
+}
+
+engine.proj = mat4.perspective(
+	engine.cam.fov,
+	sw / sh,
+	.1,
+	512
+)
+
+----
+engine.shadowMap = lg.newCanvas(
+  2048,
+  2048,
+  {
+    format="r16f",
+    readable=true,
+  }
+)
+engine.shadowMap:setFilter("linear","linear")
+
+engine.shadowSize = 40
+engine.sunProj = mat4.ortho(
+    -engine.shadowSize, engine.shadowSize,
+    -engine.shadowSize, engine.shadowSize,
+    -512,512
+  )
+engine.sunProj = mat4.transpose(engine.sunProj)
+----
+
+-- base lighting params
+
+engine.lighting = {}
+
+engine.lighting.solidSkyColor = {.5,.5,.5}
+engine.lighting.sunDirection = {.45,.87,-.25}
+
+engine.lighting.colorCorrection = {
+  brightness = 1,
+  saturation = 1,
+  contrast = 1
+}
+
+engine.lighting.ambient = .15
+engine.lighting.specShininess = 64
+engine.lighting.specStrength = .25
+
+engine.lighting.shadowEnabled = true
+engine.lighting.simpleShadows = false
+engine.lighting.specularEnabled = true
+engine.lighting.diffuseEnabled = true
+engine.lighting.skyboxEnabled = true
+
+----
 local skyboxVerts = {
   {-1, -1,  1,  1/4, 1/3},
   { 1, -1,  1,  1/2, 1/3},
@@ -49,106 +137,32 @@ local skyboxVerts = {
   { 1, -1,  1,  1/2, 1/3},
   {-1, -1,  1,  1/4, 1/3},
 }
-local engine = {}
-engine.path = "lovexyz/"
--- engine stuff
-
-engine.graphicsScale = 1
-
-engine.canvas = love.graphics.newCanvas(
-  math.ceil(sw*engine.graphicsScale),
-  math.ceil(sh*engine.graphicsScale),
-  {format="rgba8",readable=true}
-  )
-engine.depthCanvas = love.graphics.newCanvas(
-  math.ceil(sw*engine.graphicsScale),
-  math.ceil(sh*engine.graphicsScale),
-  {
-    format="depth24",
-    type = "2d",
-    readable=true
-    
-  }
-  )
-
--- create shaders
-engine.skyboxShader = love.graphics.newShader(engine.path.."3d/gl/transformSky.vert")
-engine.transformShader = love.graphics.newShader(engine.path.."3d/gl/main.glsl")
-engine.shadowMapShader = love.graphics.newShader(engine.path.."3d/gl/shadowMap.glsl")
-engine.colorCorrection = love.graphics.newShader(engine.path.."3d/gl/colorCorrect.frag")
-
-----
-engine.shadowMap = love.graphics.newCanvas(
-  2048,
-  2048,
-  {
-    format="r16f",
-    readable=true,
-  }
-)
-engine.shadowMap:setFilter("linear","linear")
-
-engine.shadowSize = 40
-engine.sunProj = mat4.ortho(
-    -engine.shadowSize, engine.shadowSize,
-    -engine.shadowSize, engine.shadowSize,
-    -512,512
-  )
-engine.sunProj = mat4.transpose(engine.sunProj)
-----
-
--- base lighting params
-
-engine.lighting = {}
-
-engine.lighting.solidSkyColor = {.5,.5,.5}
-engine.lighting.sunDirection = {.45,.87,-.25}
-
-engine.lighting.colorCorrection = {
-  brightness = 1,
-  saturation = 1,
-  contrast = 1
-}
-
-engine.lighting.ambient = .15
-engine.lighting.specShininess = 64
-engine.lighting.specStrength = .25
-
-engine.lighting.shadowEnabled = true
-engine.lighting.simpleShadows = false
-engine.lighting.specularEnabled = true
-engine.lighting.diffuseEnabled = true
-engine.lighting.skyboxEnabled = true
-
-
-----
-engine.cam = {
-  pos=vec3.new(0,0,3),
-  rot=vec3.new(),
-  fov = math.rad(90),
-  matrix=mat4.identity()
-}
-
-engine.proj = mat4.perspective(
-	engine.cam.fov,
-	sw / sh,
-	.1,
-	512
-)
 
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
   {"VertexTexCoord", "float", 2},
 }
-engine.skyboxMesh = love.graphics.newMesh(
+engine.skyboxMesh = lg.newMesh(
   engine.skyboxFormat,
   skyboxVerts,
   "triangles",
   "static"
 )
-engine.skyTexture = love.graphics.newImage(engine.path.."3d/defaults/default_sky.png")
+engine.skyTexture = lg.newImage(engine.path.."3d/defaults/default_sky.png")
 engine.skyboxMesh:setTexture(engine.skyTexture)
+----
+engine.debug = {}
 
+engine.debug.frameDtMs = 0
+
+engine.shadowCanvasSize = 0
+engine.mainCanvasSize = 0
+engine.windowSize = 0
+
+engine.debug.totalDrawCalls = 0
+
+
+----
 -- functions
 local function buildView(cam)
 	local rx = mat4.rotX(-cam.rot.x)
@@ -166,27 +180,6 @@ local function buildView(cam)
 	return mat4.mul(r, t)
 end
 
-local function dirToEuler(dir)
-  local yaw = math.atan2(dir.x, -dir.z)
-  local pitch = math.asin(-dir.y)
-  local roll = 0
-    
-  return vec3.new(pitch, yaw, roll)
-end
-
-function eulerToDir(pitch, yaw)
-  local cp = math.cos(pitch)
-  local sp = math.sin(pitch)
-  local cy = math.cos(yaw)
-  local sy = math.sin(yaw)
-
-  return {
-    x = sy * cp,
-    y = sp,
-    z = -cy * cp
-  }
-end
-
 local function buildSunView(sunDir, cam)
   local dir = vec3.new(sunDir[1], sunDir[2], sunDir[3]):normalize()
   local target = cam.pos
@@ -201,40 +194,48 @@ local function buildSunView(sunDir, cam)
 end
 
 function engine.perfDebug()
-  love.graphics.push()
-  love.graphics.translate(8,8)
   
-  love.graphics.setColor(0,0,0,.7)
-  love.graphics.rectangle("fill",0,0,256,32+16)
-  
-  love.graphics.push()
-  love.graphics.translate(8,8)
-  
-  love.graphics.setColor(1,1,1)
-  love.graphics.print(string.format("%.2f fps",1/love.timer.getAverageDelta()))
-  
-  love.graphics.setColor(1,1,1)
-  love.graphics.print(string.format("%.2f live fps",1/love.timer.getDelta()),0,16)
-  
-  love.graphics.pop()
-  
-  love.graphics.setColor(1,1,1)
-  
-  love.graphics.pop()
+  local padding = 8
+  local lineH = 16
+  local width = 256
+
+  local lines = 0
+  for _ in pairs(engine.debug) do
+    lines = lines + 1
+  end
+
+  local height = padding * 2 + lines * lineH
+
+  lg.push()
+  lg.translate(8, 8)
+
+  lg.setColor(0,0,0,.7)
+  lg.rectangle("fill", 0, 0, width, height)
+
+  lg.translate(padding, padding)
+  lg.setColor(1, 1, 1)
+
+  local y = 0
+  for k, v in pairs(engine.debug) do
+    lg.print(k .. ": " .. tostring(v), 0, y)
+    y = y + lineH
+  end
+
+  lg.pop()
 end
 
 function engine.refreshCanvases()
-  sw,sh = love.graphics.getWidth(), love.graphics.getHeight()
+  sw,sh = lg.getWidth(), lg.getHeight()
   
   engine.canvas:release()
   engine.depthCanvas:release()
   
-  engine.canvas = love.graphics.newCanvas(
+  engine.canvas = lg.newCanvas(
     math.ceil(sw*engine.graphicsScale),
     math.ceil(sh*engine.graphicsScale),
     {format="rgba8",readable=true}
     )
-  engine.depthCanvas = love.graphics.newCanvas(
+  engine.depthCanvas = lg.newCanvas(
     math.ceil(sw*engine.graphicsScale),
     math.ceil(sh*engine.graphicsScale),
     {
@@ -259,9 +260,10 @@ function engine.refreshCanvases()
 end
 
 function engine.draw()
-  love.graphics.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
-  love.graphics.clear(engine.lighting.solidSkyColor[2],engine.lighting.solidSkyColor[3],engine.lighting.solidSkyColor[1],1,false,1)
+  lg.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
+  lg.clear(engine.lighting.solidSkyColor[2],engine.lighting.solidSkyColor[3],engine.lighting.solidSkyColor[1],1,false,1)
   ----
+  local drawCount = 0
   
 	local view = buildView(engine.cam)
 	local viewNoTranslation = {
@@ -288,33 +290,34 @@ function engine.draw()
   ---- skybox
   if not engine.lighting.skyboxEnabled then goto skyboxEnd end
   
-  love.graphics.setMeshCullMode("front")
-  love.graphics.setDepthMode("lequal", false)
-  love.graphics.setShader(engine.skyboxShader)
+  lg.setMeshCullMode("front")
+  lg.setDepthMode("lequal", false)
+  lg.setShader(engine.skyboxShader)
   engine.skyboxShader:send("u_MVP", mat4.mul(mvpNoTranslate,mat4.scale(1,-1,1)))
   
-  love.graphics.draw(engine.skyboxMesh)
+  lg.draw(engine.skyboxMesh)
+  drawCount = drawCount + 1
   
   ::skyboxEnd::
   
   ---- shadow map
   if not engine.lighting.shadowEnabled then goto shadowMapEnd end
   
-  love.graphics.setCanvas({engine.shadowMap, depth = true})
-  love.graphics.clear()
+  lg.setCanvas({engine.shadowMap, depth = true})
+  lg.clear()
   
-  love.graphics.setMeshCullMode("front")
-  love.graphics.setDepthMode("less", true)
+  lg.setMeshCullMode("front")
+  lg.setDepthMode("less", true)
   
-  love.graphics.setShader(engine.shadowMapShader)
+  lg.setShader(engine.shadowMapShader)
   engine.shadowMapShader:send("u_MVP", sunMVP)
   for _, model in ipairs(triangles.loadedModels) do
     if not model.visible then goto skip end
     
     local modelMatrix = model.transformMatrix
     engine.shadowMapShader:send("u_ModelMatrix", modelMatrix)
-    love.graphics.draw(model.mesh)
-    
+    lg.draw(model.mesh)
+    drawCount = drawCount + 1
     ::skip::
   end
   ::shadowMapEnd::
@@ -324,12 +327,12 @@ function engine.draw()
   
   
   ---- main canvas render
-  love.graphics.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
+  lg.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
   
-  love.graphics.setMeshCullMode("back")
-  love.graphics.setDepthMode("less", true)
+  lg.setMeshCullMode("back")
+  lg.setDepthMode("less", true)
   
-  love.graphics.setShader(engine.transformShader)
+  lg.setShader(engine.transformShader)
   
   engine.transformShader:send("shadowMap", engine.shadowMap)
   engine.transformShader:send("u_SunMVP", sunMVP)
@@ -340,8 +343,8 @@ function engine.draw()
     
     local modelMatrix = model.transformMatrix
     engine.transformShader:send("u_ModelMatrix", modelMatrix)
-    love.graphics.draw(model.mesh)
-    
+    lg.draw(model.mesh)
+    drawCount = drawCount + 1
     ::skip::
   end
   
@@ -359,18 +362,30 @@ function engine.draw()
   engine.transformShader:send("simpleShadows",engine.lighting.simpleShadows)
   
   ---- finally draw the canvas
-  love.graphics.setCanvas()
+  lg.setCanvas()
   
-  love.graphics.setShader(engine.colorCorrection)
+  lg.setShader(engine.colorCorrection)
   engine.colorCorrection:send("u_Brightness",engine.lighting.colorCorrection.brightness)
   engine.colorCorrection:send("u_Saturation",engine.lighting.colorCorrection.saturation)
   engine.colorCorrection:send("u_Contrast",engine.lighting.colorCorrection.contrast)
   
-  love.graphics.setDepthMode("always", false)
-  love.graphics.draw(engine.canvas, 0, 0, 0, sw/engine.canvas:getWidth(),sh/engine.canvas:getHeight())
+  lg.setDepthMode("always", false)
+  lg.draw(engine.canvas, 0, 0, 0, sw/engine.canvas:getWidth(),sh/engine.canvas:getHeight())
+  drawCount = drawCount + 1
   ----
   
-  love.graphics.setShader()
+  lg.setShader()
+  
+  -- update debugs
+  engine.debug.frameDtMs = tostring(love.timer.getAverageDelta()*1000) .. " ms"
+  
+  engine.debug.shadowCanvasSize = tostring(engine.shadowMap:getWidth()) .. "x" .. tostring(engine.shadowMap:getHeight())
+  engine.debug.mainCanvasSize = tostring(engine.canvas:getWidth()) .. "x" .. tostring(engine.canvas:getHeight())
+  engine.debug.windowSize = tostring(sw) .. "x" .. tostring(sh)
+  
+  
+  engine.debug.totalDrawCalls = drawCount
+  
 end
 
 
