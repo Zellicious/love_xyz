@@ -72,20 +72,23 @@ engine.depthCanvas = love.graphics.newCanvas(
   )
 
 -- create shaders
-engine.skyboxShader = love.graphics.newShader(engine.path.."3d/gl/transformSky.glsl")
-engine.transformShader = love.graphics.newShader(engine.path.."3d/gl/lit.glsl",engine.path.."3d/gl/transform.glsl")
-engine.transformOnly = love.graphics.newShader(engine.path.."3d/gl/shadowMapFrag.glsl",engine.path.."3d/gl/transform.glsl")
-engine.colorCorrection = love.graphics.newShader(engine.path.."3d/gl/colorCorrect.glsl")
+engine.skyboxShader = love.graphics.newShader(engine.path.."3d/gl/transformSky.vert")
+engine.transformShader = love.graphics.newShader(engine.path.."3d/gl/main.glsl")
+engine.shadowMapShader = love.graphics.newShader(engine.path.."3d/gl/shadowMap.glsl")
+engine.colorCorrection = love.graphics.newShader(engine.path.."3d/gl/colorCorrect.frag")
 
 ----
 engine.shadowMap = love.graphics.newCanvas(
-  1024,
-  1024
-  ,{format="r16f",readable=true}
+  2048,
+  2048,
+  {
+    format="r16f",
+    readable=true,
+  }
 )
 engine.shadowMap:setFilter("linear","linear")
 
-engine.shadowSize = 20
+engine.shadowSize = 40
 engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
@@ -171,22 +174,30 @@ local function dirToEuler(dir)
   return vec3.new(pitch, yaw, roll)
 end
 
-local function buildSunView(sunDir,cam)
-  local dir = vec3.new(sunDir[1],sunDir[2],sunDir[3]):normalize()
-  local dirRot = dirToEuler(dir)
-  local rx = mat4.rotX(dirRot.x)
-	local ry = mat4.rotY(dirRot.y)
-	local rz = mat4.rotZ(0)
+function eulerToDir(pitch, yaw)
+  local cp = math.cos(pitch)
+  local sp = math.sin(pitch)
+  local cy = math.cos(yaw)
+  local sy = math.sin(yaw)
 
-	local r = mat4.mul(rz, mat4.mul(rx, ry))
+  return {
+    x = sy * cp,
+    y = sp,
+    z = -cy * cp
+  }
+end
 
-	local t = mat4.translate_col(
-  	dir.x-cam.pos.x,
-  	dir.y-cam.pos.y,
-  	dir.z-cam.pos.z
-	 )
+local function buildSunView(sunDir, cam)
+  local dir = vec3.new(sunDir[1], sunDir[2], sunDir[3]):normalize()
+  local target = cam.pos
 
-	return mat4.mul(r, t)
+  local lightPos = target - dir * 100.0
+
+  local up = math.abs(dir.y) > 0.99
+      and vec3.new(0, 0, 1)
+      or  vec3.new(0, 1, 0)
+
+  return mat4.lookAt(lightPos, target, up)
 end
 
 function engine.perfDebug()
@@ -292,16 +303,16 @@ function engine.draw()
   love.graphics.setCanvas({engine.shadowMap, depth = true})
   love.graphics.clear()
   
-  love.graphics.setMeshCullMode("back")
+  love.graphics.setMeshCullMode("front")
   love.graphics.setDepthMode("less", true)
   
-  love.graphics.setShader(engine.transformOnly)
-  engine.transformOnly:send("u_MVP", sunMVP)
+  love.graphics.setShader(engine.shadowMapShader)
+  engine.shadowMapShader:send("u_MVP", sunMVP)
   for _, model in ipairs(triangles.loadedModels) do
     if not model.visible then goto skip end
     
     local modelMatrix = model.transformMatrix
-    engine.transformOnly:send("u_ModelMatrix", modelMatrix)
+    engine.shadowMapShader:send("u_ModelMatrix", modelMatrix)
     love.graphics.draw(model.mesh)
     
     ::skip::
@@ -335,7 +346,7 @@ function engine.draw()
   end
   
   ---- send lighting info to fragment
-  engine.transformShader:send("u_ShadowMapSize",{engine.shadowMap:getWidth(),engine.shadowMap:getHeight()})
+  engine.transformShader:send("u_ShadowMapTexel",{engine.shadowMap:getWidth(),engine.shadowMap:getHeight()})
   engine.transformShader:send("u_LightDir", engine.lighting.sunDirection)
   engine.transformShader:send("u_CamPosWorld", {engine.cam.pos.x,engine.cam.pos.y,engine.cam.pos.z})
   engine.transformShader:send("u_Ambient", engine.lighting.ambient)
