@@ -15,10 +15,11 @@ uniform vec2 u_ShadowMapSize;
 uniform bool shadowEnabled;
 uniform bool specularEnabled;
 uniform bool diffuseEnabled;
+uniform bool simpleShadows;
 
-float rand(vec2 co)
+float rand(vec2 p)
 {
-  return fract(sin(dot(co, vec2(12856.9898,7567.233))) * 43.5453);
+  return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 highp float sampleShadow(vec4 lightSpacePos,vec3 N, vec3 L)
@@ -28,30 +29,34 @@ highp float sampleShadow(vec4 lightSpacePos,vec3 N, vec3 L)
   
   if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0))))
     return 1.0;
-        
+  
   highp float currentDepth = proj.z;
-
-  highp float bias = max(0.001 * (1.0 - dot(N, L)), 0.0006);
+  
+  highp float bias = max(0.00075 * (1.0 - dot(N, L)), 0.0005);
   highp float shadow = 0.0;
 
   highp vec2 texelSize = 1.0 / u_ShadowMapSize;
   highp float angle = rand(gl_FragCoord.xy) * 6.2831853;
-  mat2 rot = mat2(cos(angle), -sin(angle),
-                            sin(angle),  cos(angle));
-    
-  for (int x = -1; x <= 1; x++)
-  {
-    for (int y = -1; y <= 1; y++)
+  mat2 rot = mat2(cos(angle), -sin(angle),sin(angle), cos(angle));
+  
+  if (!simpleShadows) {
+    for (int x = -1; x <= 1; x++)
     {
-      vec2 p = vec2(float(x), float(y));
-      vec2 offset = rot * p * texelSize;
-      highp float depth = Texel(shadowMap, uv + offset).r;
-      shadow += ((currentDepth - bias > depth) ? 0.0 : 1.0);
+      for (int y = -1; y <= 1; y++)
+      {
+        vec2 p = vec2(float(x), float(y));
+        vec2 offset = rot * p * texelSize;
+        highp float depth = Texel(shadowMap, uv + offset).r;
+        shadow += ((currentDepth - bias > depth) ? 0.0 : 1.0);
+        
+      }
     }
+      
+    shadow /= 9.0;
+  } else {
+    highp float depth = Texel(shadowMap, uv).r;
+    shadow = ((currentDepth - bias > depth) ? 0.0 : 1.0);
   }
-    
-  shadow /= 9.0;
-
   return shadow;
 }
 
@@ -77,7 +82,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords)
       spec *= shadowStrength;
       diff *= shadowStrength;
     }
-    // base texture color
     vec4 texColor = Texel(tex, texture_coords) * color;
     
     if (diffuseEnabled)

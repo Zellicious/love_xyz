@@ -71,9 +71,11 @@ engine.depthCanvas = love.graphics.newCanvas(
   }
   )
 
+-- create shaders
 engine.skyboxShader = love.graphics.newShader(engine.path.."3d/gl/transformSky.glsl")
 engine.transformShader = love.graphics.newShader(engine.path.."3d/gl/lit.glsl",engine.path.."3d/gl/transform.glsl")
 engine.transformOnly = love.graphics.newShader(engine.path.."3d/gl/shadowMapFrag.glsl",engine.path.."3d/gl/transform.glsl")
+engine.colorCorrection = love.graphics.newShader(engine.path.."3d/gl/colorCorrect.glsl")
 
 ----
 engine.shadowMap = love.graphics.newCanvas(
@@ -83,12 +85,12 @@ engine.shadowMap = love.graphics.newCanvas(
 )
 engine.shadowMap:setFilter("linear","linear")
 
-engine.shadowSize = 32
+engine.shadowSize = 20
 engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
-    -500, 500
-)
+    -512,512
+  )
 engine.sunProj = mat4.transpose(engine.sunProj)
 ----
 
@@ -99,11 +101,18 @@ engine.lighting = {}
 engine.lighting.solidSkyColor = {.5,.5,.5}
 engine.lighting.sunDirection = {.45,.87,-.25}
 
+engine.lighting.colorCorrection = {
+  brightness = 1,
+  saturation = 1,
+  contrast = 1
+}
+
 engine.lighting.ambient = .15
 engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
 
 engine.lighting.shadowEnabled = true
+engine.lighting.simpleShadows = false
 engine.lighting.specularEnabled = true
 engine.lighting.diffuseEnabled = true
 engine.lighting.skyboxEnabled = true
@@ -121,9 +130,8 @@ engine.proj = mat4.perspective(
 	engine.cam.fov,
 	sw / sh,
 	.1,
-	500
+	512
 )
-
 
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
@@ -228,14 +236,14 @@ function engine.refreshCanvases()
   engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
-    -500, 500
+    -512,512
   )
   engine.sunProj = mat4.transpose(engine.sunProj)
   engine.proj = mat4.perspective(
   	engine.cam.fov,
   	sw / sh,
   	.1,
-  	500
+  	512
   )
 end
 
@@ -337,14 +345,21 @@ function engine.draw()
   engine.transformShader:send("diffuseEnabled",engine.lighting.diffuseEnabled)
   engine.transformShader:send("specularEnabled",engine.lighting.specularEnabled)
   engine.transformShader:send("shadowEnabled",engine.lighting.shadowEnabled)
+  engine.transformShader:send("simpleShadows",engine.lighting.simpleShadows)
   
   ---- finally draw the canvas
   love.graphics.setCanvas()
-  love.graphics.setShader()
+  
+  love.graphics.setShader(engine.colorCorrection)
+  engine.colorCorrection:send("u_Brightness",engine.lighting.colorCorrection.brightness)
+  engine.colorCorrection:send("u_Saturation",engine.lighting.colorCorrection.saturation)
+  engine.colorCorrection:send("u_Contrast",engine.lighting.colorCorrection.contrast)
   
   love.graphics.setDepthMode("always", false)
   love.graphics.draw(engine.canvas, 0, 0, 0, sw/engine.canvas:getWidth(),sh/engine.canvas:getHeight())
   ----
+  
+  love.graphics.setShader()
 end
 
 

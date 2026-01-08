@@ -1,19 +1,28 @@
-# lovexyz
-lovexyz is a 3d engine developed for Love2D by Zellicious.
+# love_xyz
+love_xyz is a 3d engine developed for Love2D by Zellicious.
 <br>
 <br>
 ![preview what the engine can do](preview.gif)
 
-
 ----
+
 
 ### State of the engine
 
-This version of LoveXYZ is unstable and is not optimized.
+This version of love_xyz is unstable.
 
 This version is also pretty unfinished.
 
 Will add more features and improve perf.
+
+
+----
+
+### Require
+
+1. Insert the ```lovexyz``` directory to your game folder.
+2. In your main.lua: <br><br> ```lovexyz = require("lovexyz")```
+3. Have fun!! go to the [documentation](#documentation) for more info!
 
 ----
 
