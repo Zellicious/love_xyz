@@ -264,7 +264,6 @@ function engine.draw()
   lg.clear(engine.lighting.solidSkyColor[2],engine.lighting.solidSkyColor[3],engine.lighting.solidSkyColor[1],1,false,1)
   ----
   local drawCount = 0
-  
 	local view = buildView(engine.cam)
 	local viewNoTranslation = {
     view[1], view[2], view[3],  0,
@@ -287,7 +286,7 @@ function engine.draw()
     }
   
   
-  ---- skybox
+  ---- skybox 
   if not engine.lighting.skyboxEnabled then goto skyboxEnd end
   
   lg.setMeshCullMode("front")
@@ -300,7 +299,7 @@ function engine.draw()
   
   ::skyboxEnd::
   
-  ---- shadow map
+  ---- shadow map 
   if not engine.lighting.shadowEnabled then goto shadowMapEnd end
   
   lg.setCanvas({engine.shadowMap, depth = true})
@@ -326,7 +325,7 @@ function engine.draw()
   
   
   
-  ---- main canvas render
+  ---- main canvas render 
   lg.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
   
   lg.setMeshCullMode("back")
