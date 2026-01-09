@@ -79,22 +79,23 @@ highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
+  // i just used intuition
   vec4 texColor = Texel(tex, texture_coords) * color;
   float aoCol = Texel(AOMap,texture_coords).r;
   float roughCol = Texel(RoughMap,texture_coords).r;
 
+  // lighting
+
   vec3 N = normalize(vNormal);
   vec3 L = normalize(u_LightDir);
   vec3 V = normalize(vPosition - u_CamPosWorld);
-  
-  highp float NoL = max(dot(N, L), 0.0);
-
-  // lighting
-  highp float diff = NoL;
   vec3 H = normalize(L + V);
+  
+  highp float NoL = clamp(dot(N, L), 0.0, 1.0);
+  highp float diff = NoL;
 
-  highp float finalShininess = mix(u_Shininess, 128.0, 1.0 - roughCol);
-  highp float finalSpecStrength = u_Specular * roughCol;
+  highp float finalShininess = mix(u_Shininess, 64.0, 1.0 - roughCol);
+  highp float finalSpecStrength = u_Specular * (1.0-roughCol);
 
   highp float spec = pow(min(max(dot(N, H), 0.0), 1.0), finalShininess);
 
@@ -112,14 +113,14 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     vec3 R = reflect(V, N);
     vec3 env = Texel(reflectionMap, R*vec3(1.0,-1.0,1.0)).rgb;
   
-    float fresnel = u_BaseReflectionStrength + (1.0-u_BaseReflectionStrength) * pow(1.0 - max(dot(N, V), 0.0), 4.0);
+    float fresnel = u_BaseReflectionStrength + (1.0-u_BaseReflectionStrength) * (u_ReflectionStrength * pow(1.0 - max(dot(N, V), 0.0), 5.0));
     // float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.0);
     
     
     texColor.rgb = mix(
       texColor.rgb,
       env,
-      u_ReflectionStrength * fresnel * (1.0 - roughCol)
+      fresnel * (1.0 - roughCol)
     );
   }
   if (diffuseEnabled) {

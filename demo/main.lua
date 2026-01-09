@@ -15,7 +15,9 @@ function love.load()
   -- lovexyz params
   --lovexyz.lighting.shadowEnabled = false
   lovexyz.lighting.ambient = .15
-
+  lovexyz.lighting.colorCorrection.brightness = 1
+  lovexyz.lighting.colorCorrection.saturation = 1
+  
   -- initialize custom shadow map (make sure its correct format)
   local supportedImgFormats = love.graphics.getImageFormats()
   if supportedImgFormats["r32f"] then
@@ -57,10 +59,10 @@ function love.load()
   socrates:scale(.05,.05,.05)
 
   -- set textures on mesh and mtl
-  socrates.mtl.reflectionStrength = 1
-  socrates.mtl.baseReflectionStrength = .1
-  socrates.mtl.specStrength = 1
-  socrates.mtl.shininess = 2
+  socrates.mtl.reflectionStrength = .89
+  socrates.mtl.baseReflectionStrength = .167
+  socrates.mtl.specStrength = .76
+  socrates.mtl.shininess = 1
 
   socrates.mtl.aoTex = triangles.textureCache["socrates_ao"]
   socrates.mtl.roughTex = triangles.textureCache["socrates_rough"]
