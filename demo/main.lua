@@ -1,7 +1,7 @@
 --[[
 
-This is a demo file, containing the demo from preview.gif (deleted)
-
+This is a demo file, its updated from the legacy demo
+This demo is designed to test engine capabilities
 
 ]]
 
@@ -12,44 +12,62 @@ lovexyz = require("lovexyz")
 -----
 
 function love.load()
-  -- newTexture: load texture and store it
-	uvTex = triangles.newTexture("assets/tex/tex2.png","UVTex")
-	uvTex2 = triangles.newTexture("assets/tex/tex.png","UVTex2")
-	
-	-- loadModel: load model objs
-	teapot = triangles.loadModel("assets/highp_models/teapot.obj")
-	suzanne = triangles.loadModel("assets/highp_models/suzanne.obj")
-	
-	pillar = triangles.loadModel("assets/lowp_models/cube_uv.obj")
-	
-	floor = triangles.loadModel("assets/lowp_models/cube_uv.obj")
-  
-  -- model: set textures and transforms
-	floor.mesh:setTexture(uvTex)
-	teapot.mesh:setTexture(uvTex2)
-	suzanne.mesh:setTexture(uvTex2)
-	
-	teapot:scale(.06,.06,.06)
-	teapot:move(0,1,0)
-	
-	suzanne:scale(1,1,1)
-	suzanne:move(4,.6,0)
-	
-	floor:scale(16,16,16)
-	floor:move(0,18,0)
-	
-	pillar:scale(1,4,1)
-	pillar:move(-4,-2,.5)
+  -- lovexyz params
+  --lovexyz.lighting.shadowEnabled = false
+  lovexyz.lighting.ambient = .15
 
-  --lovexyz.lighting.simpleShadows = true
-	lovexyz.canvas:setFilter("linear","linear")
-	
-	-- per model lighting
-	teapot.mtl.reflectionStrength = 1
-	teapot.mtl.baseReflectionStrength = .1
-	teapot.mtl.specStrength= 1
+  -- initialize custom shadow map (make sure its correct format)
+  local supportedImgFormats = love.graphics.getImageFormats()
+  if supportedImgFormats["r32f"] then
+    lovexyz.shadowMap = love.graphics.newCanvas(
+      4096,
+      4096,
+      {
+        format="r32f",
+        readable=true,
+      }
+    )
+  else
+    lovexyz.shadowMap = love.graphics.newCanvas(
+      4096,
+      4096,
+      {
+        format="r16f",
+        readable=true,
+      }
+    )
+  end
+  lovexyz.shadowMap:setFilter("linear","linear")
+  lovexyz.shadowSize = 16
+  lovexyz.lighting.shadowSmoothness = 1
+
+  lovexyz.cam.fov = math.rad(60)
+  lovexyz.cam.pos = vec3.new(-4.1,-5.5,-4.1)
+  lovexyz.cam.rot = vec3.new(math.rad(16),math.pi + math.rad(33),0)
+
+  -- load Socrates.obj
+  socrates = triangles.loadModel("assets/Socrates.obj","static","socrates")
+
+  -- load Socrates's textures
+  socrates_col = triangles.newTexture("assets/socrates_col.png","socrates_col")
+  socrates_ao = triangles.newTexture("assets/socrates_ao.png","socrates_ao")
+  socrates_rough = triangles.newTexture("assets/socrates_rough.png","socrates_rough")
+
+  -- scale Socrates
+  socrates:scale(.05,.05,.05)
+
+  -- set textures on mesh and mtl
+  socrates.mtl.reflectionStrength = .7
+  socrates.mtl.baseReflectionStrength = .3
+  socrates.mtl.specStrength = 1
+  socrates.mtl.shininess = 16
+
+  socrates.mtl.aoTex = triangles.textureCache["socrates_ao"]
+  socrates.mtl.roughTex = triangles.textureCache["socrates_rough"]
+  socrates.mesh:setTexture(triangles.textureCache["socrates_col"])
 end
 
+-- movement function
 local function getCameraDirs(cam)
 	local yaw = cam.rot.y
 	local pitch = -cam.rot.x
@@ -71,11 +89,7 @@ local function getCameraDirs(cam)
 	return right, forward
 end
 
-function love.update(dt)
-	dt = math.min(dt,1)
-  teapot:rotY(dt)
-  suzanne:rotate(dt*.8,dt,dt*.6)
-
+local function move(dt)
   local dx = 0
   local dy = 0
 
@@ -85,45 +99,52 @@ function love.update(dt)
   local speed = dt*4
 
   if love.keyboard.isDown("w") then
-  	dy = 1
+    dy = 1
   end
   if love.keyboard.isDown("s") then
-  	dy = -1
+    dy = -1
   end
 
   if love.keyboard.isDown("a") then
-  	dx = 1
+    dx = 1
   end
   if love.keyboard.isDown("d") then
-  	dx = -1
+    dx = -1
   end
 
   if love.keyboard.isDown("up") then
-  	mdy = -1
+    mdy = -1
   end
   if love.keyboard.isDown("down") then
-  	mdy = 1
+    mdy = 1
   end
 
   if love.keyboard.isDown("left") then
-  	mdx = -1
+    mdx = -1
   end
   if love.keyboard.isDown("right") then
-  	mdx = 1
+    mdx = 1
   end
 
 
   local m = math.sqrt(dx*dx+dy*dy)
   if m > 0 then
-  	dx = dx/m
-  	dy = dy/m
-	end
+    dx = dx/m
+    dy = dy/m
+  end
 
   local right, forward = getCameraDirs(lovexyz.cam)
-	lovexyz.cam.pos =	lovexyz.cam.pos	- right * (dx * speed)	- forward * (dy * speed)
-	lovexyz.cam.rot.y = lovexyz.cam.rot.y - mdx * speed
-	lovexyz.cam.rot.x = lovexyz.cam.rot.x + mdy * speed
-	
+  lovexyz.cam.pos = lovexyz.cam.pos - right * (dx * speed)  - forward * (dy * speed)
+  lovexyz.cam.rot.y = lovexyz.cam.rot.y - mdx * speed
+  lovexyz.cam.rot.x = lovexyz.cam.rot.x + mdy * speed
+end
+
+function love.update(dt)
+	dt = math.min(dt,1)
+  move(dt)
+
+  -- rotate Socrates
+  triangles.loadedModels["socrates"]:rotY(dt*.1) -- or socrates:rotY(dt*.1)
 end
 
 function love.resize(w,h)

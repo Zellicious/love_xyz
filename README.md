@@ -29,7 +29,7 @@ Will add more features and improve perf.
 ### Usage notes
 
 * Supports simple triangle loading and obj model loading
-* Supports simple shading (blinn-phong and shadow map shadows)
+* Supports simple shading + a little of PBR (blinn-phong and shadow map shadows)
 * You can cache textures and give them simpler names to use in other scripts
 
 ----

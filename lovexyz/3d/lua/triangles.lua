@@ -73,7 +73,8 @@ function triangles.loadModel(path,usage,lookupName)
 	  mesh=mesh,
 	  transformMatrix=mat4.identity(),
 	  mtl={
-	    
+	    aoTex=nil,
+	    roughTex=nil
 	  },
 	  visible=true
 	}
@@ -110,7 +111,7 @@ function triangles.loadModel(path,usage,lookupName)
   end
 	
 	triangles.meshes[#triangles.meshes + 1] = mesh
-	triangles.loadedModels[lookupName or #triangles.loadedModels + 1] = model
+	triangles.loadedModels[(lookupName) or (#triangles.loadedModels + 1)] = model
 	
 	return model
 end

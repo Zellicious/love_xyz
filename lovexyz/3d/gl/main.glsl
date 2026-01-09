@@ -6,6 +6,8 @@ varying float vDepth;
 varying vec3 vPosition;
 
 uniform Image shadowMap;
+uniform Image AOMap;
+uniform Image RoughMap;
 uniform CubeImage reflectionMap;
 
 uniform mat4 u_SunMVP;
@@ -74,6 +76,11 @@ highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
 }
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+
+  vec4 texColor = Texel(tex, texture_coords) * color;
+  float aoCol = Texel(AOMap,texture_coords).r;
+  float roughCol = Texel(RoughMap,texture_coords).r;
+
   vec3 N = normalize(vNormal);
   vec3 L = normalize(u_LightDir);
   vec3 V = normalize(vPosition - u_CamPosWorld);
@@ -83,7 +90,11 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   // lighting
   highp float diff = NoL;
   vec3 H = normalize(L + V);
-  highp float spec = pow(min(max(dot(N, H), 0.0), 1.0), u_Shininess);
+
+  highp float finalShininess = mix(u_Shininess, 128.0, 1.0 - roughCol);
+  highp float finalSpecStrength = u_Specular * roughCol;
+
+  highp float spec = pow(min(max(dot(N, H), 0.0), 1.0), finalShininess);
 
   if (shadowEnabled) {
     vec4 lightSpacePos = u_SunMVP * vec4(vPosition, 1.0);
@@ -94,7 +105,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     spec *= shadowStrength;
     diff *= shadowStrength;
   }
-  vec4 texColor = Texel(tex, texture_coords) * color;
+
   if (reflectionsEnabled) {
     vec3 R = reflect(V, N);
     vec3 env = Texel(reflectionMap, R*vec3(1.0,-1.0,1.0)).rgb;
@@ -106,16 +117,16 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     texColor.rgb = mix(
       texColor.rgb,
       env,
-      u_ReflectionStrength * fresnel
+      u_ReflectionStrength * fresnel * (1.0 - roughCol)
     );
   }
   if (diffuseEnabled) {
-    float lighting = (u_Ambient + diff);
+    float lighting = (u_Ambient * aoCol + diff);
     texColor.rgb *= lighting;
   }
 
   if (specularEnabled) {
-    texColor.rgb += vec3(spec * u_Specular);
+    texColor.rgb += vec3(spec * finalSpecStrength);
   }
 
   return vec4(texColor.rgb, 1.0);

@@ -21,14 +21,16 @@ _G.obj = require(basePathName..".3d.lua.obj")
 engine = require(basePathName..".3d.engine")
 engine.path = basePathName
 
-engine._VERSION = "lovexyz 0.5.0-alpha"
+engine._VERSION = "lovexyz 0.6.2-alpha"
 engine.patchNotes = [[
 **MINOR**
-- REFLECTIONS!!
-- model.mtl for per model lighting params (same as default global params just in the model)
+- ambient occlusion! (use like model.mtl.aoTex)
+- roughness! (use like model.mtl.roughTex)
 
 **PATCH**
-- nuthing yet
+- fixed custom lookupNames for models
+- fixed models not appearing with custom lookupNames
+
 
 ]]
 

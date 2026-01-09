@@ -29,6 +29,9 @@ engine.skyboxShader = lg.newShader(engine.path.."3d/gl/transformSky.vert")
 engine.transformShader = lg.newShader(engine.path.."3d/gl/main.glsl")
 engine.shadowMapShader = lg.newShader(engine.path.."3d/gl/shadowMap.glsl")
 engine.colorCorrection = lg.newShader(engine.path.."3d/gl/colorCorrect.frag")
+
+engine.blkTex = lg.newImage(engine.path.."3d/defaults/blk.png")
+engine.whTex = lg.newImage(engine.path.."3d/defaults/wh.png")
 ----
 
 engine.cam = {
@@ -331,12 +334,12 @@ function engine.draw()
   lg.setCanvas({engine.shadowMap, depth = true})
   lg.clear()
   
-  lg.setMeshCullMode("front")
-  lg.setDepthMode("less", true)
+  lg.setMeshCullMode("back")
+  lg.setDepthMode("lequal", true)
   
   lg.setShader(engine.shadowMapShader)
   engine.shadowMapShader:send("u_MVP", sunMVP)
-  for _, model in ipairs(triangles.loadedModels) do
+  for _, model in pairs(triangles.loadedModels) do
     if not model.visible then goto skip end
     
     local modelMatrix = model.transformMatrix
@@ -365,7 +368,7 @@ function engine.draw()
   engine.transformShader:send("u_SunMVP", sunMVP)
   
   engine.transformShader:send("u_MVP", mvp)
-  for _, model in ipairs(triangles.loadedModels) do
+  for _, model in pairs(triangles.loadedModels) do
     if not model.visible then goto skip end
     local modelMatrix = model.transformMatrix
     engine.transformShader:send("u_ModelMatrix", modelMatrix)
@@ -374,7 +377,10 @@ function engine.draw()
     engine.transformShader:send("u_Specular",model.mtl.specStrength or engine.lighting.specStrength)
     engine.transformShader:send("u_ReflectionStrength",model.mtl.reflectionStrength or engine.lighting.reflectionStrength)
     engine.transformShader:send("u_BaseReflectionStrength",model.mtl.baseReflectionStrength or engine.lighting.baseReflectionStrength)
-    
+
+    engine.transformShader:send("AOMap",model.mtl.aoTex or engine.whTex)
+    engine.transformShader:send("RoughMap",model.mtl.roughTex or engine.whTex)
+
     lg.draw(model.mesh)
     
     
