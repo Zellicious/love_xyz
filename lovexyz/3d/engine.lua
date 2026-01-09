@@ -3,6 +3,7 @@ local lg = love.graphics -- tired of typing love.graphics?
 local sw,sh = lg.getWidth(), lg.getHeight()
 local engine = {}
 engine.path = "lovexyz/"
+engine.EPSILON = .001
 -- engine stuff
 
 engine.graphicsScale = 1
@@ -81,8 +82,8 @@ engine.lighting.colorCorrection = {
 engine.lighting.ambient = .15
 engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
-engine.lighting.reflectionStrength = .1
-engine.lighting.baseReflectionStrength = .02
+engine.lighting.reflectionStrength = 0
+engine.lighting.baseReflectionStrength = 0
 
 
 engine.lighting.shadowEnabled = true
@@ -142,7 +143,7 @@ local skyboxVerts = {
   { 1, -1,  1,  1/2, 1/3},
   {-1, -1,  1,  1/4, 1/3},
 }
-engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png")
+engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps = true})
 -- legacy skybox
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
@@ -157,7 +158,7 @@ engine.skyboxMesh = lg.newMesh(
   "static"
 )
 
-engine.skyTexture = lg.newImage(engine.path.."3d/defaults/default_sky.png")
+engine.skyTexture = lg.newImage(engine.path.."3d/defaults/default_sky.png",{mipmaps=true})
 engine.skyboxMesh:setTexture(engine.skyTexture)
 
 ----
