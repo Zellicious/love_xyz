@@ -1,5 +1,8 @@
 function love.conf(t)
-	t.window.fullscreen = true
+	--t.window.fullscreen = true
+	t.window.resizable = true
 	t.window.fullscreentype = "desktop"
+	t.window.title = "lovexyz v0.6.x-alpha"
+	t.window.icon = "icon.jpeg"
 	t.window.vsync = 0
 end

@@ -85,7 +85,7 @@ engine.sunProj = mat4.transpose(engine.sunProj)
 engine.lighting = {}
 
 engine.lighting.solidSkyColor = {.5,.5,.5}
-engine.lighting.sunDirection = {.45,.87,-.25}
+engine.lighting.sunDirection = {.45,.5,-.25}
 
 engine.lighting.colorCorrection = {
   brightness = 1,
@@ -239,7 +239,7 @@ function engine.perfDebug()
   lg.setColor(0,0,0,.7)
   lg.rectangle("fill", 0, 0, width, height,8,8)
   lg.setColor(1,1,1,1)
-  lg.draw(engine.shadowMap,width+8,0,0,.0475,.0475)
+  lg.draw(engine.shadowMap,width+8,0,0,height/engine.shadowMap:getWidth(),height/engine.shadowMap:getWidth())
 
   lg.translate(padding, padding)
   lg.setColor(1, 1, 1)

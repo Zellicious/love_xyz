@@ -21,7 +21,7 @@ _G.obj = require(basePathName..".3d.lua.obj")
 engine = require(basePathName..".3d.engine")
 engine.path = basePathName
 
-engine._VERSION = "lovexyz 0.6.2-alpha"
+engine._VERSION = "lovexyz 0.6.4-alpha"
 engine.patchNotes = [[
 **MINOR**
 - ambient occlusion! (use like model.mtl.aoTex)
@@ -30,7 +30,6 @@ engine.patchNotes = [[
 **PATCH**
 - fixed custom lookupNames for models
 - fixed models not appearing with custom lookupNames
-
 
 ]]
 

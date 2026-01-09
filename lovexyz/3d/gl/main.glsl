@@ -1,3 +1,5 @@
+// the big boi
+
 uniform mat4 u_MVP;
 uniform mat4 u_ModelMatrix;
 

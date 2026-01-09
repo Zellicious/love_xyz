@@ -20,8 +20,8 @@ function love.load()
   local supportedImgFormats = love.graphics.getImageFormats()
   if supportedImgFormats["r32f"] then
     lovexyz.shadowMap = love.graphics.newCanvas(
-      4096,
-      4096,
+      8192,
+      8192,
       {
         format="r32f",
         readable=true,
@@ -29,8 +29,8 @@ function love.load()
     )
   else
     lovexyz.shadowMap = love.graphics.newCanvas(
-      4096,
-      4096,
+      8192,
+      8192,
       {
         format="r16f",
         readable=true,
@@ -38,8 +38,8 @@ function love.load()
     )
   end
   lovexyz.shadowMap:setFilter("linear","linear")
-  lovexyz.shadowSize = 16
-  lovexyz.lighting.shadowSmoothness = 1
+  lovexyz.shadowSize = 32
+  lovexyz.lighting.shadowSmoothness = 1.5
 
   lovexyz.cam.fov = math.rad(60)
   lovexyz.cam.pos = vec3.new(-4.1,-5.5,-4.1)
@@ -57,10 +57,10 @@ function love.load()
   socrates:scale(.05,.05,.05)
 
   -- set textures on mesh and mtl
-  socrates.mtl.reflectionStrength = .7
-  socrates.mtl.baseReflectionStrength = .3
+  socrates.mtl.reflectionStrength = 1
+  socrates.mtl.baseReflectionStrength = .1
   socrates.mtl.specStrength = 1
-  socrates.mtl.shininess = 16
+  socrates.mtl.shininess = 2
 
   socrates.mtl.aoTex = triangles.textureCache["socrates_ao"]
   socrates.mtl.roughTex = triangles.textureCache["socrates_rough"]

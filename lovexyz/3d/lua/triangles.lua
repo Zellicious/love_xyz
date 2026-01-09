@@ -1,4 +1,6 @@
 local triangles = {}
+local PI = 3.141592653589793238462643383279
+
 triangles.path = "lovexyz/"
 
 triangles.__index = triangles
@@ -49,13 +51,8 @@ end
 
 function triangles.newTexture(path,name)
   assert(love.filesystem.getInfo(path),"File not found: "..path)
-  local tex = love.graphics.newImage(path)
-  
-  if isPowerOfTwo(tex:getHeight()) and isPowerOfTwo(tex:getWidth()) then
-    tex = love.graphics.newImage(path,{mipmaps=true})
-  end
+  local tex = love.graphics.newImage(path,{mipmaps=true})
 	tex:setWrap("repeat", "repeat")
-	
 	triangles.textureCache[name] = tex
 	return tex
 end
