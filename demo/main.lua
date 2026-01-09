@@ -12,7 +12,7 @@ lovexyz = require("lovexyz")
 -----
 
 function love.load()
-  -- newTexture: load tecxture and store it
+  -- newTexture: load texture and store it
 	uvTex = triangles.newTexture("assets/tex/tex2.png","UVTex")
 	uvTex2 = triangles.newTexture("assets/tex/tex.png","UVTex2")
 	

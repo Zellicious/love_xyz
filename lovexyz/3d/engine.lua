@@ -56,7 +56,7 @@ engine.shadowMap = lg.newCanvas(
 )
 engine.shadowMap:setFilter("linear","linear")
 
-engine.shadowSize = 24
+engine.shadowSize = 64
 engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
@@ -84,6 +84,7 @@ engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
 engine.lighting.reflectionStrength = 0
 engine.lighting.baseReflectionStrength = 0
+engine.lighting.shadowSmoothness = .25
 
 
 engine.lighting.shadowEnabled = true
@@ -144,7 +145,7 @@ local skyboxVerts = {
   {-1, -1,  1,  1/4, 1/3},
 }
 engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps = true})
--- legacy skybox
+
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
   {"VertexTexCoord", "float", 2},
@@ -195,7 +196,7 @@ local function buildSunView(sunDir, cam)
   local dir = vec3.new(sunDir[1], sunDir[2], sunDir[3]):normalize()
   local target = cam.pos
 
-  local lightPos = target - dir * 100.0
+  local lightPos = target - dir
 
   local up = math.abs(dir.y) > 0.99
       and vec3.new(0, 0, 1)
@@ -374,6 +375,7 @@ function engine.draw()
   engine.transformShader:send("u_LightDir", engine.lighting.sunDirection)
   engine.transformShader:send("u_CamPosWorld", {engine.cam.pos.x,engine.cam.pos.y,engine.cam.pos.z})
   engine.transformShader:send("u_Ambient", engine.lighting.ambient)
+  engine.transformShader:send("u_ShadowSmoothness", engine.lighting.shadowSmoothness)
    
   
   engine.transformShader:send("diffuseEnabled",engine.lighting.diffuseEnabled)

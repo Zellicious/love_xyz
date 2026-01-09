@@ -16,6 +16,7 @@ uniform number u_Shininess;
 uniform number u_Specular;
 uniform number u_ReflectionStrength;
 uniform number u_BaseReflectionStrength;
+uniform number u_ShadowSmoothness;
 uniform vec2 u_ShadowMapTexel;
 
 uniform bool shadowEnabled;
@@ -55,17 +56,16 @@ highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
   // PCF shadows, somehow still aliases
   if (!simpleShadows) {
     highp vec2 texelSize = 1.0 / u_ShadowMapTexel;
-    for (int x = -1; x <= 1; x++) {
-      for (int y = -1; y <= 1; y++) {
+    for (int x = -2; x <= 2; x++) {
+      for (int y = -2; y <= 2; y++) {
         vec2 p = vec2(float(x), float(y));
-        highp vec2 offset = p * texelSize;
+        highp vec2 offset = p * texelSize * u_ShadowSmoothness;
         highp float depth = Texel(shadowMap, uv + offset).r;
         shadow += ((currentDepth - bias > depth) ? 0.0: 1.0);
-
       }
     }
 
-    shadow /= 9.0;
+    shadow /= 25.0;
   } else {
     highp float depth = Texel(shadowMap, uv).r;
     shadow = ((currentDepth - bias > depth) ? 0.0: 1.0);
