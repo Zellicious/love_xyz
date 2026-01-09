@@ -1,4 +1,4 @@
-name: Nightly Auto Commit
+name: auto-commit
 
 on:
   schedule:
@@ -28,5 +28,5 @@ jobs:
     - name: Commit and push changes
       uses: stefanzweifel/git-auto-commit-action@v5
       with:
-        commit_message: "Auto-commit: Nightly update"
+        commit_message: "auto-commit-nightly"
         # The default GITHUB_TOKEN is sufficient for this action
