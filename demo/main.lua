@@ -16,7 +16,6 @@ function love.load()
 	uvTex = triangles.newTexture("assets/tex/tex2.png","UVTex")
 	uvTex2 = triangles.newTexture("assets/tex/tex.png","UVTex2")
 	
-	
 	-- loadModel: load model objs
 	teapot = triangles.loadModel("assets/highp_models/teapot.obj")
 	suzanne = triangles.loadModel("assets/highp_models/suzanne.obj")
