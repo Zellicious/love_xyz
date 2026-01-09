@@ -1,9 +1,9 @@
+<img src="icon.png" alt="icon" width="480" height="480">
+
 # love_xyz
 love_xyz is a 3d engine developed for Love2D by Zellicious.
 <br>
 <br>
-![preview what the engine can do](preview.gif)
-
 ----
 
 
