@@ -360,8 +360,6 @@ function engine.draw()
     engine.transformShader:send("u_Specular",model.mtl.specStrength or engine.lighting.specStrength)
     engine.transformShader:send("u_ReflectionStrength",model.mtl.reflectionStrength or engine.lighting.reflectionStrength)
     engine.transformShader:send("u_BaseReflectionStrength",model.mtl.baseReflectionStrength or engine.lighting.baseReflectionStrength)
-  
-    
     
     lg.draw(model.mesh)
     

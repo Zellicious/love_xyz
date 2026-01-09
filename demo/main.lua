@@ -44,6 +44,11 @@ function love.load()
 
   --lovexyz.lighting.simpleShadows = true
 	lovexyz.canvas:setFilter("linear","linear")
+	
+	-- per model lighting
+	teapot.mtl.reflectionStrength = 1
+	teapot.mtl.baseReflectionStrength = .1
+	teapot.mtl.specStrength= 1
 end
 
 local function getCameraDirs(cam)
