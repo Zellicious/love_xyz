@@ -55,7 +55,7 @@ engine.shadowMap = lg.newCanvas(
 )
 engine.shadowMap:setFilter("linear","linear")
 
-engine.shadowSize = 40
+engine.shadowSize = 24
 engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
@@ -77,15 +77,20 @@ engine.lighting.colorCorrection = {
   contrast = 1
 }
 
+-- default values if per model values arent used
 engine.lighting.ambient = .15
 engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
+engine.lighting.reflectionStrength = .1
+engine.lighting.baseReflectionStrength = .02
+
 
 engine.lighting.shadowEnabled = true
 engine.lighting.simpleShadows = false
 engine.lighting.specularEnabled = true
 engine.lighting.diffuseEnabled = true
 engine.lighting.skyboxEnabled = true
+engine.lighting.reflectionsEnabled = true
 
 ----
 local skyboxVerts = {
@@ -137,19 +142,24 @@ local skyboxVerts = {
   { 1, -1,  1,  1/2, 1/3},
   {-1, -1,  1,  1/4, 1/3},
 }
-
+engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png")
+-- legacy skybox
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
   {"VertexTexCoord", "float", 2},
 }
+
+
 engine.skyboxMesh = lg.newMesh(
   engine.skyboxFormat,
   skyboxVerts,
   "triangles",
   "static"
 )
+
 engine.skyTexture = lg.newImage(engine.path.."3d/defaults/default_sky.png")
 engine.skyboxMesh:setTexture(engine.skyTexture)
+
 ----
 engine.debug = {}
 
@@ -211,6 +221,8 @@ function engine.perfDebug()
 
   lg.setColor(0,0,0,.7)
   lg.rectangle("fill", 0, 0, width, height)
+  lg.setColor(1,1,1,1)
+  lg.draw(engine.shadowMap,width+8,0,0,.05,.05)
 
   lg.translate(padding, padding)
   lg.setColor(1, 1, 1)
@@ -334,15 +346,26 @@ function engine.draw()
   lg.setShader(engine.transformShader)
   
   engine.transformShader:send("shadowMap", engine.shadowMap)
+  engine.transformShader:send("reflectionMap", engine.skyReflectionMap)
+  
   engine.transformShader:send("u_SunMVP", sunMVP)
   
   engine.transformShader:send("u_MVP", mvp)
   for _, model in ipairs(triangles.loadedModels) do
     if not model.visible then goto skip end
-    
     local modelMatrix = model.transformMatrix
     engine.transformShader:send("u_ModelMatrix", modelMatrix)
+    
+    engine.transformShader:send("u_Shininess",model.mtl.shininess or engine.lighting.specShininess)
+    engine.transformShader:send("u_Specular",model.mtl.specStrength or engine.lighting.specStrength)
+    engine.transformShader:send("u_ReflectionStrength",model.mtl.reflectionStrength or engine.lighting.reflectionStrength)
+    engine.transformShader:send("u_BaseReflectionStrength",model.mtl.baseReflectionStrength or engine.lighting.baseReflectionStrength)
+  
+    
+    
     lg.draw(model.mesh)
+    
+    
     drawCount = drawCount + 1
     ::skip::
   end
@@ -352,12 +375,12 @@ function engine.draw()
   engine.transformShader:send("u_LightDir", engine.lighting.sunDirection)
   engine.transformShader:send("u_CamPosWorld", {engine.cam.pos.x,engine.cam.pos.y,engine.cam.pos.z})
   engine.transformShader:send("u_Ambient", engine.lighting.ambient)
-  engine.transformShader:send("u_Shininess", engine.lighting.specShininess)
-  engine.transformShader:send("u_Specular", engine.lighting.specStrength)
+   
   
   engine.transformShader:send("diffuseEnabled",engine.lighting.diffuseEnabled)
   engine.transformShader:send("specularEnabled",engine.lighting.specularEnabled)
   engine.transformShader:send("shadowEnabled",engine.lighting.shadowEnabled)
+  engine.transformShader:send("reflectionsEnabled",engine.lighting.reflectionsEnabled)
   engine.transformShader:send("simpleShadows",engine.lighting.simpleShadows)
   
   ---- finally draw the canvas
@@ -381,7 +404,6 @@ function engine.draw()
   engine.debug.shadowCanvasSize = tostring(engine.shadowMap:getWidth()) .. "x" .. tostring(engine.shadowMap:getHeight())
   engine.debug.mainCanvasSize = tostring(engine.canvas:getWidth()) .. "x" .. tostring(engine.canvas:getHeight())
   engine.debug.windowSize = tostring(sw) .. "x" .. tostring(sh)
-  
   
   engine.debug.totalDrawCalls = drawCount
   

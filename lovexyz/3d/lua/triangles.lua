@@ -72,6 +72,9 @@ function triangles.loadModel(path,usage,lookupName)
 	local model = {
 	  mesh=mesh,
 	  transformMatrix=mat4.identity(),
+	  mtl={
+	    
+	  },
 	  visible=true
 	}
 	

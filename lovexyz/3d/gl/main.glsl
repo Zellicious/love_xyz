@@ -6,6 +6,7 @@ varying float vDepth;
 varying vec3 vPosition;
 
 uniform Image shadowMap;
+uniform CubeImage reflectionMap;
 
 uniform mat4 u_SunMVP;
 uniform vec3 u_LightDir;
@@ -13,12 +14,15 @@ uniform vec3 u_CamPosWorld;
 uniform number u_Ambient;
 uniform number u_Shininess;
 uniform number u_Specular;
+uniform number u_ReflectionStrength;
+uniform number u_BaseReflectionStrength;
 uniform vec2 u_ShadowMapTexel;
 
 uniform bool shadowEnabled;
 uniform bool specularEnabled;
 uniform bool diffuseEnabled;
 uniform bool simpleShadows;
+uniform bool reflectionsEnabled;
 
 #ifdef VERTEX
 attribute vec3 VertexNormal;
@@ -47,7 +51,8 @@ highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
 
   highp float bias = max(0.00075 * (1.0 - dot(N, L)), 0.0005);
   highp float shadow = 0.0;
-
+  
+  // PCF shadows, somehow still aliases
   if (!simpleShadows) {
     highp vec2 texelSize = 1.0 / u_ShadowMapTexel;
     for (int x = -1; x <= 1; x++) {
@@ -72,7 +77,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec3 N = normalize(vNormal);
   vec3 L = normalize(u_LightDir);
   vec3 V = normalize(vPosition - u_CamPosWorld);
-
+  
   highp float NoL = max(dot(N, L), 0.0);
 
   // lighting
@@ -89,7 +94,20 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     diff *= shadowStrength;
   }
   vec4 texColor = Texel(tex, texture_coords) * color;
-
+  if (reflectionsEnabled) {
+    vec3 R = reflect(V, N);
+    vec3 env = Texel(reflectionMap, R*vec3(1.0,-1.0,1.0)).rgb;
+  
+    float fresnel = u_BaseReflectionStrength + (1.0-u_BaseReflectionStrength) * pow(1.0 - max(dot(N, V), 0.0), 2.0);
+    // float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.0);
+    
+    
+    texColor.rgb = mix(
+      texColor.rgb,
+      env,
+      u_ReflectionStrength * fresnel
+    );
+  }
   if (diffuseEnabled) {
     float lighting = (u_Ambient + diff);
     texColor.rgb *= lighting;
@@ -98,7 +116,6 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   if (specularEnabled) {
     texColor.rgb += vec3(spec * u_Specular);
   }
-
 
   return vec4(texColor.rgb, 1.0);
 }

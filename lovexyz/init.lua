@@ -21,15 +21,14 @@ _G.obj = require(basePathName..".3d.lua.obj")
 engine = require(basePathName..".3d.engine")
 engine.path = basePathName
 
-engine._VERSION = "lovexyz 0.4.5-alpha"
+engine._VERSION = "lovexyz 0.5.0-alpha"
 engine.patchNotes = [[
 **MINOR**
-- merge frag and shader into one
-- renamed engine.lua params (may not be updated at the documentation yet)
+- REFLECTIONS!!
+- model.mtl for per model lighting params (same as default global params just in the model)
 
 **PATCH**
-- better perfDebug
-- cleaned code
+- nuthing yet
 
 ]]
 
