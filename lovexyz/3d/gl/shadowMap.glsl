@@ -1,4 +1,4 @@
-varying float vDepth;
+varying highp float vDepth;
 
 uniform mat4 u_MVP;
 uniform mat4 u_ModelMatrix;
@@ -16,7 +16,7 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 #ifdef PIXEL
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-  return vec4(vec3(vDepth), 1.0);
+  return vec4(vec3(vDepth),1.0);
 }
 
 #endif

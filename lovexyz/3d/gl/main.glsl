@@ -55,11 +55,11 @@ highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
   
   // PCF shadows, somehow still aliases
   if (!simpleShadows) {
-    highp vec2 texelSize = 1.0 / u_ShadowMapTexel;
+    highp vec2 texelSize = 1.0 / u_ShadowMapTexel * u_ShadowSmoothness;
     for (int x = -2; x <= 2; x++) {
       for (int y = -2; y <= 2; y++) {
         vec2 p = vec2(float(x), float(y));
-        highp vec2 offset = p * texelSize * u_ShadowSmoothness;
+        highp vec2 offset = p * texelSize;
         highp float depth = Texel(shadowMap, uv + offset).r;
         shadow += ((currentDepth - bias > depth) ? 0.0: 1.0);
       }
@@ -87,7 +87,8 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
   if (shadowEnabled) {
     vec4 lightSpacePos = u_SunMVP * vec4(vPosition, 1.0);
-    highp float shadow = sampleShadow(lightSpacePos, N, L);
+    highp float shadow = sampleShadow(lightSpacePos,N,L);
+
     highp float shadowStrength = mix(1.0, shadow, clamp(NoL, 1.0-u_Ambient, 1.0));
 
     spec *= shadowStrength;
@@ -98,7 +99,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     vec3 R = reflect(V, N);
     vec3 env = Texel(reflectionMap, R*vec3(1.0,-1.0,1.0)).rgb;
   
-    float fresnel = u_BaseReflectionStrength + (1.0-u_BaseReflectionStrength) * pow(1.0 - max(dot(N, V), 0.0), 2.0);
+    float fresnel = u_BaseReflectionStrength + (1.0-u_BaseReflectionStrength) * pow(1.0 - max(dot(N, V), 0.0), 4.0);
     // float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.0);
     
     

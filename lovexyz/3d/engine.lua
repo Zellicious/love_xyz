@@ -46,14 +46,26 @@ engine.proj = mat4.perspective(
 )
 
 ----
-engine.shadowMap = lg.newCanvas(
-  2048,
-  2048,
-  {
-    format="r16f",
-    readable=true,
-  }
-)
+local supportedImgFormats = lg.getImageFormats()
+if supportedImgFormats["r32f"] then
+  engine.shadowMap = lg.newCanvas(
+    2048,
+    2048,
+    {
+      format="r32f",
+      readable=true,
+    }
+  )
+else
+  engine.shadowMap = lg.newCanvas(
+    2048,
+    2048,
+    {
+      format="r16f",
+      readable=true,
+    }
+  )
+end
 engine.shadowMap:setFilter("linear","linear")
 
 engine.shadowSize = 64
@@ -84,7 +96,7 @@ engine.lighting.specShininess = 64
 engine.lighting.specStrength = .25
 engine.lighting.reflectionStrength = 0
 engine.lighting.baseReflectionStrength = 0
-engine.lighting.shadowSmoothness = .25
+engine.lighting.shadowSmoothness = .35
 
 
 engine.lighting.shadowEnabled = true
@@ -209,7 +221,7 @@ function engine.perfDebug()
   
   local padding = 8
   local lineH = 16
-  local width = 256
+  local width = sw/2
 
   local lines = 0
   for _ in pairs(engine.debug) do
@@ -222,9 +234,9 @@ function engine.perfDebug()
   lg.translate(8, 8)
 
   lg.setColor(0,0,0,.7)
-  lg.rectangle("fill", 0, 0, width, height)
+  lg.rectangle("fill", 0, 0, width, height,8,8)
   lg.setColor(1,1,1,1)
-  lg.draw(engine.shadowMap,width+8,0,0,.05,.05)
+  lg.draw(engine.shadowMap,width+8,0,0,.0475,.0475)
 
   lg.translate(padding, padding)
   lg.setColor(1, 1, 1)

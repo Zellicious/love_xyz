@@ -1,6 +1,6 @@
 --[[
 
-This is a demo file, containing the demo from preview.gif (i dont know why i didnt add this earlier)
+This is a demo file, containing the demo from preview.gif (deleted)
 
 
 ]]
@@ -121,10 +121,7 @@ function love.update(dt)
 	end
 
   local right, forward = getCameraDirs(lovexyz.cam)
-		lovexyz.cam.pos =
-			lovexyz.cam.pos
-			- right * (dx * speed)
-			- forward * (dy * speed)
+	lovexyz.cam.pos =	lovexyz.cam.pos	- right * (dx * speed)	- forward * (dy * speed)
 	lovexyz.cam.rot.y = lovexyz.cam.rot.y - mdx * speed
 	lovexyz.cam.rot.x = lovexyz.cam.rot.x + mdy * speed
 	
