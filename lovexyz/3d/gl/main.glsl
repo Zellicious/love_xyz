@@ -18,6 +18,7 @@ uniform vec3 u_LightDir;
 uniform vec3 u_CamPosWorld;
 uniform number u_ShadowSmoothness;
 uniform number u_Metallic;
+
 uniform vec2 u_ShadowMapTexel;
 
 uniform bool shadowEnabled;
@@ -38,6 +39,8 @@ vec4 position(mat4 transform_projection, vec4 vertex_position) {
 #endif
 
 #ifdef PIXEL
+
+const float PI = 3.14159265;
 
 highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
   highp vec3 proj = lightSpacePos.xyz / lightSpacePos.w;
@@ -77,29 +80,7 @@ vec3 fresnelSchlick(float VoH, vec3 F0) {
   return F0 + (1.0 - F0) * pow(1.0 - VoH, 5.0);
 }
 
-
-float D_GGX(float NoH, float rough) {
-  float a  = rough * rough;
-  float a2 = a * a;
-
-  float denom = (NoH * NoH) * (a2 - 1.0) + 1.0;
-  return a2 / max(3.14159265 * denom * denom, 1e-6);
-}
-
-float G_SchlickGGX(float NoX, float rough) {
-  float r = rough + 1.0;
-  float k = (r * r) / 8.0;   // UE4 / Disney formulation
-
-  return NoX / max(NoX * (1.0 - k) + k, 1e-6);
-}
-
-float G_Smith(float NoV, float NoL, float rough) {
-  float gv = G_SchlickGGX(NoV, rough);
-  float gl = G_SchlickGGX(NoL, rough);
-  return gv * gl;
-}
-
-// principled brdf
+// semi pbr blinn phong
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 texColor = Texel(tex, texture_coords) * color;
   float aoCol = Texel(AOMap,texture_coords).r;
@@ -118,25 +99,36 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   float NoH = max(dot(N, H), 0.0);
   float VoH = max(dot(V, H), 0.0);
 
-  // Base reflectance
+  // Textures
   vec3 albedo = texColor.rgb;
-  vec3 F0 = mix(vec3(0.04), albedo, u_Metallic);
+  float roughness = clamp(roughCol, 0.01, 1.0);
 
-  // Specular BRDF
-  float D = D_GGX(NoH, roughCol);
-  float G = G_Smith(NoV, NoL, roughCol);
-  vec3  F = fresnelSchlick(VoH, F0);
+  // Convert roughness to Blinn exponent
+  float shininess = mix(128.0, 4.0, (1.0-roughness));
 
-  vec3 specular = (D * G * F) / max(4.0 * NoV * NoL, 0.001);
+  vec3 F0 = mix(vec3(.04), albedo, u_Metallic);
 
-  // Diffuse (energy conserving)
-  vec3 kd = (1.0 - F) * (1.0 - u_Metallic);
-  vec3 diffuse = kd * albedo / 3.14159265;
+  // Fresnel
+  vec3 F = fresnelSchlick(NoV, F0);
+  vec3 kS = F;
+  vec3 kD = (1.0 - kS) * (1.0 - u_Metallic);
 
-  // Final lighting
+  vec3 diffuse = kD * albedo;
 
-  // ===== DIRECT LIGHT =====
+  float spec = pow(NoH, shininess);
+  float specNorm = (shininess) / (2.0 * PI);
+  vec3 specular = kS * spec * specNorm * albedo;
+
   vec3 lighting = (diffuse + specular) * NoL;
+
+  if (reflectionsEnabled) {
+    vec3 R = reflect(-V, N);
+    vec3 env = Texel(reflectionMap, R*vec3(-1.0,1.0,-1.0)).rgb;
+
+    vec3 kS = F;
+    vec3 iblSpec = env * kS * (1.0 - roughness);
+    lighting += iblSpec;
+  }
 
   if (shadowEnabled) {
     vec4 lightSpacePos = u_SunMVP * vec4(vPosition, 1.0);
@@ -145,24 +137,9 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     lighting *= shadowStrength;
   }
 
-  // ===== INDIRECT DIFFUSE (IBL) =====
   vec3 irradiance = Texel(irradianceMap, N).rgb;
-
-  vec3 F_ibl = fresnelSchlick(NoV, F0);
-  vec3 kD_ibl = (1.0 - F_ibl) * (1.0 - u_Metallic);
-
-  vec3 indirectDiffuse = kD_ibl * irradiance * albedo * aoCol;
+  vec3 indirectDiffuse = kD * irradiance * albedo * aoCol;
   lighting += indirectDiffuse;
-
-  // ===== INDIRECT SPECULAR (IBL) =====
-  if (reflectionsEnabled) {
-    vec3 R = reflect(-V, N);
-    vec3 env = Texel(reflectionMap, R * vec3(1.0,-1.0,1.0)).rgb;
-
-    vec3 kS = F_ibl;
-    vec3 iblSpec = env * kS * (1.0 - roughCol);
-    lighting += iblSpec;
-  }
 
   return vec4(lighting, 1.0);
 }

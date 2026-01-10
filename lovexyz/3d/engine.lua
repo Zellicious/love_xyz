@@ -84,8 +84,8 @@ engine.sunProj = mat4.transpose(engine.sunProj)
 
 engine.lighting = {}
 
-engine.lighting.solidSkyColor = {.5,.5,.5}
-engine.lighting.sunDirection = {.45,.5,-.25}
+engine.lighting.solidSkyColor = {.25,.25,.25}
+engine.lighting.sunDirection = {-.45,.5,-.25}
 
 engine.lighting.colorCorrection = {
   brightness = 1,
@@ -166,9 +166,7 @@ engine.skyboxMesh = lg.newMesh(
 engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps = true})
 engine.skyIrradianceMap = lg.newCubeImage(engine.path.."3d/defaults/default_irradiance.png",{mipmaps = true})
 
-engine.skyTexture = lg.newImage(engine.path.."3d/defaults/default_sky.png",{mipmaps=true})
-engine.skyboxMesh:setTexture(engine.skyTexture)
-
+engine.skyTexture = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps=true})
 ----
 engine.debug = {}
 
@@ -310,10 +308,11 @@ function engine.draw()
   ---- skybox 
   if not engine.lighting.skyboxEnabled then goto skyboxEnd end
   
-  lg.setMeshCullMode("front")
+  lg.setMeshCullMode("back")
   lg.setDepthMode("lequal", false)
   lg.setShader(engine.skyboxShader)
-  engine.skyboxShader:send("u_MVP", mat4.mul(mvpNoTranslate,mat4.scale(1,-1,1)))
+  engine.skyboxShader:send("u_MVP", mat4.mul(mvpNoTranslate,mat4.scale(1,1,1)))
+  engine.skyboxShader:send("skybox", engine.skyTexture)
   
   lg.draw(engine.skyboxMesh)
   drawCount = drawCount + 1
@@ -356,7 +355,7 @@ function engine.draw()
   
   engine.transformShader:send("shadowMap", engine.shadowMap)
   engine.transformShader:send("reflectionMap", engine.skyReflectionMap)
-  engine.transformShader:send("irradianceMap",engine.skyIrradianceMap)
+  engine.transformShader:send("irradianceMap", engine.skyIrradianceMap)
 
   engine.transformShader:send("u_SunMVP", sunMVP)
   
