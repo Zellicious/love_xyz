@@ -14,32 +14,9 @@ lovexyz = require("lovexyz")
 function love.load()
   -- lovexyz params
   --lovexyz.lighting.shadowEnabled = false
-  lovexyz.lighting.ambient = .15
   lovexyz.lighting.colorCorrection.brightness = 1
   lovexyz.lighting.colorCorrection.saturation = 1
   
-  -- initialize custom shadow map (make sure its correct format)
-  local supportedImgFormats = love.graphics.getImageFormats()
-  if supportedImgFormats["r32f"] then
-    lovexyz.shadowMap = love.graphics.newCanvas(
-      8192,
-      8192,
-      {
-        format="r32f",
-        readable=true,
-      }
-    )
-  else
-    lovexyz.shadowMap = love.graphics.newCanvas(
-      8192,
-      8192,
-      {
-        format="r16f",
-        readable=true,
-      }
-    )
-  end
-  lovexyz.shadowMap:setFilter("linear","linear")
   lovexyz.shadowSize = 32
   lovexyz.lighting.shadowSmoothness = 1
 

@@ -21,13 +21,15 @@ _G.obj = require(basePathName..".3d.lua.obj")
 engine = require(basePathName..".3d.engine")
 engine.path = basePathName
 
-engine._VERSION = "lovexyz 0.7.0-alpha"
+engine._VERSION = "lovexyz 0.8.0-alpha"
 engine.patchNotes = [[
 **MINOR**
-- PBR (principled BRDF)
+- heavily redesigned the entire render pipeline (some parameters were removed, replaced with textures)
+- new skybox rendering solution (via shader, fixed edges)
 
 **PATCH**
-- shader tweaks
+- revert to semi-PBR
+- changed default sky
 
 ]]
 
