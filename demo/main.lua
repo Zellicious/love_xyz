@@ -41,7 +41,7 @@ function love.load()
   end
   lovexyz.shadowMap:setFilter("linear","linear")
   lovexyz.shadowSize = 32
-  lovexyz.lighting.shadowSmoothness = 1.5
+  lovexyz.lighting.shadowSmoothness = 1
 
   lovexyz.cam.fov = math.rad(60)
   lovexyz.cam.pos = vec3.new(-4.1,-5.5,-4.1)
@@ -59,10 +59,7 @@ function love.load()
   socrates:scale(.05,.05,.05)
 
   -- set textures on mesh and mtl
-  socrates.mtl.reflectionStrength = .89
-  socrates.mtl.baseReflectionStrength = .167
-  socrates.mtl.specStrength = .76
-  socrates.mtl.shininess = 1
+  socrates.mtl.metallic = 0
 
   socrates.mtl.aoTex = triangles.textureCache["socrates_ao"]
   socrates.mtl.roughTex = triangles.textureCache["socrates_rough"]

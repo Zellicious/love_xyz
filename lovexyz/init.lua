@@ -21,11 +21,10 @@ _G.obj = require(basePathName..".3d.lua.obj")
 engine = require(basePathName..".3d.engine")
 engine.path = basePathName
 
-engine._VERSION = "lovexyz 0.6.5-alpha"
+engine._VERSION = "lovexyz 0.7.0-alpha"
 engine.patchNotes = [[
 **MINOR**
-- ambient occlusion! (use like model.mtl.aoTex)
-- roughness! (use like model.mtl.roughTex)
+- PBR (principled BRDF)
 
 **PATCH**
 - shader tweaks

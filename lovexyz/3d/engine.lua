@@ -93,21 +93,12 @@ engine.lighting.colorCorrection = {
   contrast = 1
 }
 
--- default values if per model values arent used
-engine.lighting.ambient = .15
-engine.lighting.specShininess = 64
-engine.lighting.specStrength = .25
-engine.lighting.reflectionStrength = 0
-engine.lighting.baseReflectionStrength = 0
 engine.lighting.shadowSmoothness = .35
-
 
 engine.lighting.shadowEnabled = true
 engine.lighting.simpleShadows = false
-engine.lighting.specularEnabled = true
-engine.lighting.diffuseEnabled = true
-engine.lighting.skyboxEnabled = true
 engine.lighting.reflectionsEnabled = true
+engine.lighting.skyboxEnabled = true
 
 ----
 local skyboxVerts = {
@@ -159,8 +150,6 @@ local skyboxVerts = {
   { 1, -1,  1,  1/2, 1/3},
   {-1, -1,  1,  1/4, 1/3},
 }
-engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps = true})
-
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
   {"VertexTexCoord", "float", 2},
@@ -173,6 +162,9 @@ engine.skyboxMesh = lg.newMesh(
   "triangles",
   "static"
 )
+
+engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps = true})
+engine.skyIrradianceMap = lg.newCubeImage(engine.path.."3d/defaults/default_irradiance.png",{mipmaps = true})
 
 engine.skyTexture = lg.newImage(engine.path.."3d/defaults/default_sky.png",{mipmaps=true})
 engine.skyboxMesh:setTexture(engine.skyTexture)
@@ -364,7 +356,8 @@ function engine.draw()
   
   engine.transformShader:send("shadowMap", engine.shadowMap)
   engine.transformShader:send("reflectionMap", engine.skyReflectionMap)
-  
+  engine.transformShader:send("irradianceMap",engine.skyIrradianceMap)
+
   engine.transformShader:send("u_SunMVP", sunMVP)
   
   engine.transformShader:send("u_MVP", mvp)
@@ -373,11 +366,7 @@ function engine.draw()
     local modelMatrix = model.transformMatrix
     engine.transformShader:send("u_ModelMatrix", modelMatrix)
     
-    engine.transformShader:send("u_Shininess",model.mtl.shininess or engine.lighting.specShininess)
-    engine.transformShader:send("u_Specular",model.mtl.specStrength or engine.lighting.specStrength)
-    engine.transformShader:send("u_ReflectionStrength",model.mtl.reflectionStrength or engine.lighting.reflectionStrength)
-    engine.transformShader:send("u_BaseReflectionStrength",model.mtl.baseReflectionStrength or engine.lighting.baseReflectionStrength)
-
+    engine.transformShader:send("u_Metallic",model.mtl.metallic or 0)
     engine.transformShader:send("AOMap",model.mtl.aoTex or engine.whTex)
     engine.transformShader:send("RoughMap",model.mtl.roughTex or engine.whTex)
 
@@ -392,12 +381,8 @@ function engine.draw()
   engine.transformShader:send("u_ShadowMapTexel",{engine.shadowMap:getWidth(),engine.shadowMap:getHeight()})
   engine.transformShader:send("u_LightDir", engine.lighting.sunDirection)
   engine.transformShader:send("u_CamPosWorld", {engine.cam.pos.x,engine.cam.pos.y,engine.cam.pos.z})
-  engine.transformShader:send("u_Ambient", engine.lighting.ambient)
   engine.transformShader:send("u_ShadowSmoothness", engine.lighting.shadowSmoothness)
    
-  
-  engine.transformShader:send("diffuseEnabled",engine.lighting.diffuseEnabled)
-  engine.transformShader:send("specularEnabled",engine.lighting.specularEnabled)
   engine.transformShader:send("shadowEnabled",engine.lighting.shadowEnabled)
   engine.transformShader:send("reflectionsEnabled",engine.lighting.reflectionsEnabled)
   engine.transformShader:send("simpleShadows",engine.lighting.simpleShadows)

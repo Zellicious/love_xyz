@@ -11,21 +11,16 @@ uniform Image shadowMap;
 uniform Image AOMap;
 uniform Image RoughMap;
 uniform CubeImage reflectionMap;
+uniform CubeImage irradianceMap;
 
 uniform mat4 u_SunMVP;
 uniform vec3 u_LightDir;
 uniform vec3 u_CamPosWorld;
-uniform number u_Ambient;
-uniform number u_Shininess;
-uniform number u_Specular;
-uniform number u_ReflectionStrength;
-uniform number u_BaseReflectionStrength;
 uniform number u_ShadowSmoothness;
+uniform number u_Metallic;
 uniform vec2 u_ShadowMapTexel;
 
 uniform bool shadowEnabled;
-uniform bool specularEnabled;
-uniform bool diffuseEnabled;
 uniform bool simpleShadows;
 uniform bool reflectionsEnabled;
 
@@ -77,12 +72,40 @@ highp float sampleShadow(vec4 lightSpacePos, vec3 N, vec3 L) {
   return shadow;
 }
 
-vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
-  // i just used intuition
+vec3 fresnelSchlick(float VoH, vec3 F0) {
+  return F0 + (1.0 - F0) * pow(1.0 - VoH, 5.0);
+}
+
+
+float D_GGX(float NoH, float rough) {
+  float a  = rough * rough;
+  float a2 = a * a;
+
+  float denom = (NoH * NoH) * (a2 - 1.0) + 1.0;
+  return a2 / max(3.14159265 * denom * denom, 1e-6);
+}
+
+float G_SchlickGGX(float NoX, float rough) {
+  float r = rough + 1.0;
+  float k = (r * r) / 8.0;   // UE4 / Disney formulation
+
+  return NoX / max(NoX * (1.0 - k) + k, 1e-6);
+}
+
+float G_Smith(float NoV, float NoL, float rough) {
+  float gv = G_SchlickGGX(NoV, rough);
+  float gl = G_SchlickGGX(NoL, rough);
+  return gv * gl;
+}
+
+// principled brdf
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec4 texColor = Texel(tex, texture_coords) * color;
   float aoCol = Texel(AOMap,texture_coords).r;
   float roughCol = Texel(RoughMap,texture_coords).r;
+
+  roughCol = clamp(roughCol, 0.04, 1.0);
 
   // lighting
 
@@ -90,48 +113,57 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   vec3 L = normalize(u_LightDir);
   vec3 V = normalize(vPosition - u_CamPosWorld);
   vec3 H = normalize(L + V);
-  
-  highp float NoL = clamp(dot(N, L), 0.0, 1.0);
-  highp float diff = NoL;
+  float NoL = max(dot(N, L), 0.0);
+  float NoV = max(dot(N, V), 0.0);
+  float NoH = max(dot(N, H), 0.0);
+  float VoH = max(dot(V, H), 0.0);
 
-  highp float finalShininess = mix(u_Shininess, 64.0, 1.0 - roughCol);
-  highp float finalSpecStrength = u_Specular * (1.0-roughCol);
+  // Base reflectance
+  vec3 albedo = texColor.rgb;
+  vec3 F0 = mix(vec3(0.04), albedo, u_Metallic);
 
-  highp float spec = pow(min(max(dot(N, H), 0.0), 1.0), finalShininess);
+  // Specular BRDF
+  float D = D_GGX(NoH, roughCol);
+  float G = G_Smith(NoV, NoL, roughCol);
+  vec3  F = fresnelSchlick(VoH, F0);
+
+  vec3 specular = (D * G * F) / max(4.0 * NoV * NoL, 0.001);
+
+  // Diffuse (energy conserving)
+  vec3 kd = (1.0 - F) * (1.0 - u_Metallic);
+  vec3 diffuse = kd * albedo / 3.14159265;
+
+  // Final lighting
+
+  // ===== DIRECT LIGHT =====
+  vec3 lighting = (diffuse + specular) * NoL;
 
   if (shadowEnabled) {
     vec4 lightSpacePos = u_SunMVP * vec4(vPosition, 1.0);
-    highp float shadow = sampleShadow(lightSpacePos,N,L);
-
-    highp float shadowStrength = mix(1.0, shadow, clamp(NoL, 1.0-u_Ambient, 1.0));
-
-    spec *= shadowStrength;
-    diff *= shadowStrength;
+    float shadow = sampleShadow(lightSpacePos, N, L);
+    float shadowStrength = mix(1.0, shadow, clamp(NoL, 0.0, 1.0));
+    lighting *= shadowStrength;
   }
 
+  // ===== INDIRECT DIFFUSE (IBL) =====
+  vec3 irradiance = Texel(irradianceMap, N).rgb;
+
+  vec3 F_ibl = fresnelSchlick(NoV, F0);
+  vec3 kD_ibl = (1.0 - F_ibl) * (1.0 - u_Metallic);
+
+  vec3 indirectDiffuse = kD_ibl * irradiance * albedo * aoCol;
+  lighting += indirectDiffuse;
+
+  // ===== INDIRECT SPECULAR (IBL) =====
   if (reflectionsEnabled) {
-    vec3 R = reflect(V, N);
-    vec3 env = Texel(reflectionMap, R*vec3(1.0,-1.0,1.0)).rgb;
-  
-    float fresnel = u_BaseReflectionStrength + (1.0-u_BaseReflectionStrength) * (u_ReflectionStrength * pow(1.0 - max(dot(N, V), 0.0), 5.0));
-    // float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.0);
-    
-    
-    texColor.rgb = mix(
-      texColor.rgb,
-      env,
-      fresnel * (1.0 - roughCol)
-    );
-  }
-  if (diffuseEnabled) {
-    float lighting = (u_Ambient * aoCol + diff);
-    texColor.rgb *= lighting;
+    vec3 R = reflect(-V, N);
+    vec3 env = Texel(reflectionMap, R * vec3(1.0,-1.0,1.0)).rgb;
+
+    vec3 kS = F_ibl;
+    vec3 iblSpec = env * kS * (1.0 - roughCol);
+    lighting += iblSpec;
   }
 
-  if (specularEnabled) {
-    texColor.rgb += vec3(spec * finalSpecStrength);
-  }
-
-  return vec4(texColor.rgb, 1.0);
+  return vec4(lighting, 1.0);
 }
 #endif
