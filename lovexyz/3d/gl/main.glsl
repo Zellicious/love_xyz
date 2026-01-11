@@ -104,17 +104,15 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
   float roughness = clamp(roughCol, 0.01, 1.0);
 
   // Convert roughness to Blinn exponent
-  float shininess = mix(128.0, 4.0, (1.0-roughness));
-
+  float shininess = mix(128.0, 4.0, roughness);
   vec3 F0 = mix(vec3(.04), albedo, u_Metallic);
 
   // Fresnel
   vec3 F = fresnelSchlick(NoV, F0);
   vec3 kS = F;
   vec3 kD = (1.0 - kS) * (1.0 - u_Metallic);
-
-  vec3 diffuse = kD * albedo;
-
+  vec3 diffuse = albedo * kD;
+  
   float spec = pow(NoH, shininess);
   float specNorm = (shininess) / (2.0 * PI);
   vec3 specular = kS * spec * specNorm * albedo;

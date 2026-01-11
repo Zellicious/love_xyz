@@ -3,7 +3,6 @@ local lg = love.graphics -- tired of typing love.graphics?
 local sw,sh = lg.getWidth(), lg.getHeight()
 local engine = {}
 engine.path = "lovexyz/"
-engine.EPSILON = .001
 -- engine stuff
 
 engine.graphicsScale = 1
@@ -49,7 +48,7 @@ engine.proj = mat4.perspective(
 )
 
 ----
-local supportedImgFormats = lg.getImageFormats()
+local supportedImgFormats = lg.getCanvasFormats()
 if supportedImgFormats["r32f"] then
   engine.shadowMap = lg.newCanvas(
     2048,
@@ -102,57 +101,56 @@ engine.lighting.skyboxEnabled = true
 
 ----
 local skyboxVerts = {
-  {-1, -1,  1,  1/4, 1/3},
-  { 1, -1,  1,  1/2, 1/3},
-  { 1,  1,  1,  1/2, 2/3},
+  {-1, -1,  1},
+  { 1, -1,  1},
+  { 1,  1,  1},
 
-  {-1, -1,  1,  1/4, 1/3},
-  { 1,  1,  1,  1/2, 2/3},
-  {-1,  1,  1,  1/4, 2/3},
+  {-1, -1,  1},
+  { 1,  1,  1},
+  {-1,  1,  1},
   --
-  { 1, -1, -1,  3/4,   1/3},
-  {-1, -1, -1,  1, 1/3},
-  {-1,  1, -1,  1, 2/3},
+  { 1, -1, -1},
+  {-1, -1, -1},
+  {-1,  1, -1},
 
-  { 1, -1, -1,  3/4,   1/3},
-  {-1,  1, -1,  1, 2/3},
-  { 1,  1, -1,  3/4,   2/3},
+  { 1, -1, -1},
+  {-1,  1, -1},
+  { 1,  1, -1},
   --
-  {-1, -1, -1,  0,   1/3},
-  {-1, -1,  1,  1/4, 1/3},
-  {-1,  1,  1,  1/4, 2/3},
+  {-1, -1, -1},
+  {-1, -1,  1},
+  {-1,  1,  1},
 
-  {-1, -1, -1,  0,   1/3},
-  {-1,  1,  1,  1/4, 2/3},
-  {-1,  1, -1,  0,   2/3},
+  {-1, -1, -1},
+  {-1,  1,  1},
+  {-1,  1, -1},
 
-  { 1, -1,  1,  1/2, 1/3},
-  { 1, -1, -1,  3/4, 1/3},
-  { 1,  1, -1,  3/4, 2/3},
+  { 1, -1,  1},
+  { 1, -1, -1},
+  { 1,  1, -1},
 
-  { 1, -1,  1,  1/2, 1/3},
-  { 1,  1, -1,  3/4, 2/3},
-  { 1,  1,  1,  1/2, 2/3},
+  { 1, -1,  1},
+  { 1,  1, -1},
+  { 1,  1,  1},
 
-  {-1,  1,  1,  1/4, 2/3},
-  { 1,  1,  1,  1/2, 2/3},
-  { 1,  1, -1,  1/2, 1},
+  {-1,  1,  1},
+  { 1,  1,  1},
+  { 1,  1, -1},
 
-  {-1,  1,  1,  1/4, 2/3},
-  { 1,  1, -1,  1/2, 1},
-  {-1,  1, -1,  1/4, 1},
+  {-1,  1,  1},
+  { 1,  1, -1},
+  {-1,  1, -1},
 
-  {-1, -1, -1,  1/4, 0},
-  { 1, -1, -1,  1/2, 0},
-  { 1, -1,  1,  1/2, 1/3},
+  {-1, -1, -1},
+  { 1, -1, -1},
+  { 1, -1,  1},
 
-  {-1, -1, -1,  1/4, 0},
-  { 1, -1,  1,  1/2, 1/3},
-  {-1, -1,  1,  1/4, 1/3},
+  {-1, -1, -1},
+  { 1, -1,  1},
+  {-1, -1,  1},
 }
 engine.skyboxFormat = {
   {"VertexPosition", "float", 3},
-  {"VertexTexCoord", "float", 2},
 }
 
 
@@ -165,16 +163,15 @@ engine.skyboxMesh = lg.newMesh(
 
 engine.skyReflectionMap = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps = true})
 engine.skyIrradianceMap = lg.newCubeImage(engine.path.."3d/defaults/default_irradiance.png",{mipmaps = true})
-
 engine.skyTexture = lg.newCubeImage(engine.path.."3d/defaults/default_sky.png",{mipmaps=true})
 ----
 engine.debug = {}
 
 engine.debug.frameDtMs = 0
 
-engine.shadowCanvasSize = 0
-engine.mainCanvasSize = 0
-engine.windowSize = 0
+engine.debug.shadowCanvasSize = 0
+engine.debug.mainCanvasSize = 0
+engine.debug.windowSize = 0
 
 engine.debug.totalDrawCalls = 0
 
@@ -253,7 +250,8 @@ function engine.refreshCanvases()
     math.ceil(sw*engine.graphicsScale),
     math.ceil(sh*engine.graphicsScale),
     {format="rgba8",readable=true}
-    )
+  )
+  
   engine.depthCanvas = lg.newCanvas(
     math.ceil(sw*engine.graphicsScale),
     math.ceil(sh*engine.graphicsScale),
@@ -263,13 +261,16 @@ function engine.refreshCanvases()
       readable=true
       
     }
-    )
+  )
+  
   engine.sunProj = mat4.ortho(
     -engine.shadowSize, engine.shadowSize,
     -engine.shadowSize, engine.shadowSize,
     -512,512
   )
+  
   engine.sunProj = mat4.transpose(engine.sunProj)
+  
   engine.proj = mat4.perspective(
   	engine.cam.fov,
   	sw / sh,
@@ -280,7 +281,7 @@ end
 
 function engine.draw()
   lg.setCanvas({engine.canvas,nil, depthstencil = engine.depthCanvas, depth = true})
-  lg.clear(engine.lighting.solidSkyColor[2],engine.lighting.solidSkyColor[3],engine.lighting.solidSkyColor[1],1,false,1)
+  lg.clear(engine.lighting.solidSkyColor[1],engine.lighting.solidSkyColor[2],engine.lighting.solidSkyColor[3],1,false,1)
   ----
   local drawCount = 0
 	local view = buildView(engine.cam)
@@ -297,13 +298,6 @@ function engine.draw()
   
   local sunView = buildSunView(engine.lighting.sunDirection,engine.cam)
   local sunMVP = mat4.mul(engine.sunProj, sunView)
-  local sunMVPNoTranslate = {
-    sunView[1], sunView[2], sunView[3],  0,
-    sunView[5], sunView[6], sunView[7],  0,
-    sunView[9], sunView[10],sunView[11], 0,
-    0, 0, 0, 1
-    }
-  
   
   ---- skybox 
   if not engine.lighting.skyboxEnabled then goto skyboxEnd end
@@ -311,7 +305,7 @@ function engine.draw()
   lg.setMeshCullMode("back")
   lg.setDepthMode("lequal", false)
   lg.setShader(engine.skyboxShader)
-  engine.skyboxShader:send("u_MVP", mat4.mul(mvpNoTranslate,mat4.scale(1,1,1)))
+  engine.skyboxShader:send("u_MVP", mvpNoTranslate)
   engine.skyboxShader:send("skybox", engine.skyTexture)
   
   lg.draw(engine.skyboxMesh)
