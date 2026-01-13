@@ -1,4 +1,8 @@
+
+# (THIS PROJECT HAS BEEN MOVED TO [zbox](https://github.com/Zellicious/zbox))
+
 <img src="icon.png" alt="icon" width="480" height="480">
+
 
 # love_xyz
 love_xyz is a 3d engine developed for Love2D by Zellicious.
